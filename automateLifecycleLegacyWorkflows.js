@@ -10917,22 +10917,29 @@ const createWorkflow = async (payload) => {
 
   const body = JSON.parse(await response.text());
 
-  if (body?.message?.startsWith("Failed to create or updateMetadata flow.")) {
-    console.log(`ℹ️ Workflow já existe - ${payload.name}`);
-    return;
-  }
+  if (body?.message?.startsWith("Failed to create or updateMetadata flow."))
+    return `👻 ${payload.name}: Workflow já existe`;
 
   const { flowId } = body;
 
   if (!flowId) {
-    console.log(`❗️ Erro ao criar workflow. Mensagem de erro abaixo - ${payload.name}`);
-    console.log(body);
-    return;
+    const error = body?.message?.startsWith("Couldn't find a Property")
+      ? body.message
+      : body?.errors?.[0] === "GENERIC_EXCEPTION" &&
+        body?.errors?.[1].startsWith("Unable to find some properties")
+      ? body.errors[1]
+      : JSON.stringify(body, null, 2);
+
+    return `❗️ ${payload.name}: Erro ao criar workflow. Mensagem de erro abaixo\n\n${error}`;
   }
 
-  console.log(`✅ Workflow criado com sucesso - ${payload.name}`);
+  return `✅ ${payload.name}: Workflow criado com sucesso`;
 };
 
-for (const payload of lifecyclePayloads) {
-  createWorkflow(payload);
-}
+const func = async () => {
+  const messages = await Promise.all(lifecyclePayloads.map(createWorkflow));
+
+  for (const message of messages) console.log(message);
+};
+
+func();
