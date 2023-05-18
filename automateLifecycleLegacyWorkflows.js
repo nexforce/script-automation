@@ -10890,7 +10890,7 @@ const lifecyclePayloads = [
   },
 ];
 
-// Obs.: comentei as partes dos requests acima que davam erro
+// Obs.: comentei as partes dos requests acima que davam erro por conta das dependências circulares
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
