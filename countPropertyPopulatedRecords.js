@@ -2076,13 +2076,24 @@ const getRecordsCount = async ({ objectTypeId, property }) => {
 
   const body = JSON.parse(await response.text());
 
-  console.log(property, body.count);
-
   return { objectTypeId, property, count: body.count };
 };
 
+const segmentArray = (array, batchLength) =>
+  Array.from({ length: Math.ceil(array.length / batchLength) }, (_, i) =>
+    array.slice(i * batchLength, (i + 1) * batchLength)
+  );
+
+const segmentPromises = async (dataArr, asyncFunc) => {
+  let resolvedPromises = [];
+  for (const batch of segmentArray(dataArr, 1000)) {
+    resolvedPromises = [...resolvedPromises, ...(await Promise.all(batch.map(asyncFunc)))];
+  }
+  return resolvedPromises;
+};
+
 const func = async () => {
-  const data = await Promise.all(propertiesData.map(getRecordsCount));
+  const data = await segmentPromises(propertiesData, getRecordsCount);
 
   const csvContent = data.reduce((acc, { objectTypeId, property, count }) => {
     return `${acc}${objectTypeId};${property};${count}\n`;
