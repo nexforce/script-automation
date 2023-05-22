@@ -49301,7 +49301,7 @@
                     description: Object(i.jsx)(ug, {
                         message: "pipelines.pipelineColumnCustomizationTile.description"
                     }),
-                    disabled: t,
+                    disabled: false,
                     onClick: ()=>a(!0)
                 })
             }), r && Object(i.jsx)(BI, {
