@@ -10898,7 +10898,7 @@ const getCookie = (name) => {
   if (parts.length === 2) return parts.pop().split(";").shift();
 };
 
-const portalId = document.querySelector(".navAccount-portalId").innerHTML;
+const portalId = window.location.toString().split(/[/?]/)?.[4]
 const token = getCookie("csrf.app");
 
 const createWorkflow = async (payload) => {

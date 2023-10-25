@@ -76,7 +76,7 @@ const downloadTextFile = (filename, content) => {
   document.body.removeChild(element);
 };
 
-const portalId = document.querySelector(".navAccount-portalId").innerHTML;
+const portalId = window.location.toString().split(/[/?]/)?.[4]
 const token = getCookie("csrf.app");
 
 const getFormsData = async () => {
