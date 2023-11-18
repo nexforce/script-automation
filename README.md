@@ -16,5 +16,5 @@ Considere os scripts de criação de Permission Sets e Notification Profiles da 
 1. [Permission Sets](https://github.com/nexforce/automation-scripts/blob/main/hubspot/tutorials/01.01-permission-sets.md)
 2. [Notification Profiles](https://github.com/nexforce/automation-scripts/blob/main/hubspot/tutorials/01.02-notification-profiles.md)
 
-Mais tutoriais na pasta `hubspot/tutorials` e mais scripts nas pastas `hubspot/scripts` e `frappe/scripts`
+Mais tutoriais na pasta [`hubspot/tutorials`](https://github.com/nexforce/automation-scripts/tree/main/hubspot/tutorials) e mais scripts nas pastas [`hubspot/scripts`](https://github.com/nexforce/automation-scripts/tree/main/hubspot/scripts) e [`frappe/scripts`](https://github.com/nexforce/automation-scripts/tree/main/frappe/scripts)
 
