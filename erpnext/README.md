@@ -2,7 +2,7 @@
 
 Scripts de automação de processos para Frappe/ERPNext da Nexforce
 
-### Como utilizar
+## Como utilizar
 
 1. Abra o `DevTools` e entre em `Console`
 2. Faça `CTRL+C` de um dos códigos da pasta [`scripts`](https://github.com/nexforce/automation-scripts/tree/main/erpnext/scripts) e cole num editor de texto
