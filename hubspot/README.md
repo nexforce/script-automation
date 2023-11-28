@@ -18,7 +18,7 @@ Considere os scripts de criação de Permission Sets e Notification Profiles da 
 
 Mais tutoriais na pasta [`tutoriais`](https://github.com/nexforce/automation-scripts/tree/main/hubspot/tutoriais) e mais scripts nas pastas [`scripts`](https://github.com/nexforce/automation-scripts/tree/main/hubspot/scripts)
 
-### O que fazer em caso de dúvidas
+## O que fazer em caso de dúvidas
 
 Chame o time de Tecnologia da Nexforce para sanar suas dúvidas
 
