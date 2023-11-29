@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@hubspot/api-client": "^9.0.0",
+    "axios": "^1.5.1",
+    "dotenv": "^16.3.1",
+    "fs": "^0.0.1-security",
+    "random-number-csprng": "^1.0.2"
+  }
+}
