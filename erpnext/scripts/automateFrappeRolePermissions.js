@@ -10752,102 +10752,179 @@ const categoriesDoctypes = {
   ],
 };
 
+const administratorRoles = ["System Manager", "Administrator"];
+
 const segmentArray = (array, batchLength) =>
   Array.from({ length: Math.ceil(array.length / batchLength) }, (_, i) =>
     array.slice(i * batchLength, (i + 1) * batchLength)
   );
 
+const createRoles = async (roleName, roleSpecificPermissions) => {
+  const getBody = new FormData();
+
+  getBody.set("role", roleName);
+
+  const response = await fetch(
+    `https://app.nexforce.co/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions`,
+    {
+      method: "POST",
+      headers: {
+        // frappe.csrf_token is a global variable
+        "X-Frappe-Csrf-Token": frappe.csrf_token,
+      },
+      body: getBody,
+    }
+  );
+
+  const body = JSON.parse(await response.text());
+
+  const { message: roleDoctypes } = body;
+
+  const permissionNameList = [
+    "select",
+    "read",
+    "write",
+    "create",
+    "delete",
+    "submit",
+    "cancel",
+    "amend",
+    "report",
+    "export",
+    "import",
+    "share",
+    "print",
+    "email",
+  ];
+
+  const unmatchedRolePermissions = roleSpecificPermissions.filter(
+    (p1) =>
+      !roleDoctypes.some(
+        (p2) =>
+          p1.parent === p2.parent &&
+          p1.permlevel === p2.permlevel &&
+          permissionNameList.every((name) => p1[name] === p2[name])
+      )
+  );
+
+  if (!unmatchedRolePermissions.length) {
+    console.log(`${roleName}: Already created all Role Permissions`);
+    return;
+  }
+
+  console.log(
+    `${roleName}: ${unmatchedRolePermissions.length} unmatched Role Permissions`
+  );
+
+  let i = 0;
+  for (const permissionBatch of segmentArray(unmatchedRolePermissions, 50))
+    await Promise.all(
+      permissionBatch.map(async (permissionInfo) => {
+        const addBody = new FormData();
+
+        addBody.set("parent", permissionInfo.parent);
+        addBody.set("role", roleName);
+        addBody.set("permlevel", permissionInfo.permlevel);
+
+        const response = await fetch(
+          `https://app.nexforce.co/api/method/frappe.core.page.permission_manager.permission_manager.add`,
+          {
+            method: "POST",
+            headers: {
+              // frappe.csrf_token is a global variable
+              "X-Frappe-Csrf-Token": frappe.csrf_token,
+            },
+            body: addBody,
+          }
+        );
+
+        const body = await response.text();
+
+        const alreadyAdded = body.includes("combination already exists");
+
+        await Promise.all(
+          permissionNameList.map((name) => {
+            const updateBody = new FormData();
+
+            updateBody.set("role", roleName);
+            updateBody.set("permlevel", permissionInfo.permlevel);
+            updateBody.set("doctype", permissionInfo.parent);
+
+            updateBody.set("ptype", name);
+            updateBody.set("value", permissionInfo[name]);
+
+            return fetch(
+              `https://app.nexforce.co/api/method/frappe.core.page.permission_manager.permission_manager.update`,
+              {
+                method: "POST",
+                headers: {
+                  // frappe.csrf_token is a global variable
+                  "X-Frappe-Csrf-Token": frappe.csrf_token,
+                },
+                body: updateBody,
+              }
+            );
+          })
+        );
+
+        console.log(
+          `${roleName}: ${++i}/${unmatchedRolePermissions.length}: ${
+            alreadyAdded ? "Updated" : "Created"
+          }: ${permissionInfo.parent} (permlevel ${permissionInfo.permlevel})`
+        );
+      })
+    );
+};
+
 const func = async () => {
+  const searchBody = new FormData();
+
+  searchBody.set("txt", "");
+  searchBody.set("doctype", "DocType");
+
+  const response = await fetch(
+    `https://app.nexforce.co/api/method/frappe.desk.search.search_link`,
+    {
+      method: "POST",
+      headers: {
+        // frappe.csrf_token is a global variable
+        "X-Frappe-Csrf-Token": frappe.csrf_token,
+      },
+      body: searchBody,
+    }
+  );
+
+  const body = JSON.parse(await response.text());
+
+  const allDoctypes = body.message.map((d) => d.value);
+
   for (const [roleName, doctypes] of Object.entries(categoriesDoctypes)) {
+    const nonExistentDoctypes = doctypes.filter(
+      (d) => !allDoctypes.includes(d)
+    );
+
+    if (nonExistentDoctypes.length)
+      console.warn(
+        `Nonexistent doctypes for role ${roleName}`,
+        nonExistentDoctypes
+      );
+
     const roleSpecificPermissions = allRolePermissionsTemplate.filter((p) =>
       doctypes.includes(p.parent)
     );
 
-    let i = 0;
-    for (const permissionBatch of segmentArray(roleSpecificPermissions, 50))
-      await Promise.all(
-        permissionBatch.map(async (permissionInfo) => {
-          const addBody = new FormData();
-
-          addBody.set("parent", permissionInfo.parent);
-          addBody.set("role", roleName);
-          addBody.set("permlevel", permissionInfo.permlevel);
-
-          const response = await fetch(
-            `https://app.nexforce.co/api/method/frappe.core.page.permission_manager.permission_manager.add`,
-            {
-              method: "POST",
-              headers: {
-                // frappe.csrf_token is a global variable
-                "X-Frappe-Csrf-Token": frappe.csrf_token,
-              },
-              body: addBody,
-            }
-          );
-
-          const body = await response.text();
-
-          if (body.includes("combination already exists")) {
-            console.log(
-              `${roleName}: ${++i}/${
-                roleSpecificPermissions.length
-              }: Already created: ${permissionInfo.parent} (permlevel ${
-                permissionInfo.permlevel
-              })`
-            );
-            return;
-          }
-
-          const permissionNameList = [
-            "select",
-            "read",
-            "write",
-            "create",
-            "delete",
-            "submit",
-            "cancel",
-            "amend",
-            "report",
-            "export",
-            "import",
-            "share",
-            "print",
-            "email",
-          ];
-
-          await Promise.all(
-            permissionNameList.map((name) => {
-              const updateBody = new FormData();
-
-              updateBody.set("role", roleName);
-              updateBody.set("permlevel", permissionInfo.permlevel);
-              updateBody.set("doctype", permissionInfo.parent);
-
-              updateBody.set("ptype", name);
-              updateBody.set("value", permissionInfo[name]);
-
-              return fetch(
-                `https://app.nexforce.co/api/method/frappe.core.page.permission_manager.permission_manager.update`,
-                {
-                  method: "POST",
-                  headers: {
-                    // frappe.csrf_token is a global variable
-                    "X-Frappe-Csrf-Token": frappe.csrf_token,
-                  },
-                  body: updateBody,
-                }
-              );
-            })
-          );
-
-          console.log(
-            `${roleName}: ${++i}/${roleSpecificPermissions.length}: Created: ${
-              permissionInfo.parent
-            } (permlevel ${permissionInfo.permlevel})`
-          );
-        })
-      );
+    await createRoles(roleName, roleSpecificPermissions);
   }
+
+  const nonExistentDoctypes = allRolePermissionsTemplate
+    .map((p) => p.parent)
+    .filter((d) => !allDoctypes.includes(d));
+
+  if (nonExistentDoctypes.length)
+    console.warn(`Nonexistent doctypes for admin roles`, nonExistentDoctypes);
+
+  for (const roleName of administratorRoles)
+    await createRoles(roleName, allRolePermissionsTemplate);
 
   console.log("Finished");
 };
