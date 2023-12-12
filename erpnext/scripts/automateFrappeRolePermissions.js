@@ -10876,7 +10876,7 @@ const createRoles = async (roleName, roleSpecificPermissions) => {
     );
 };
 
-const func = async () => {
+const getAllDocTypes = async () => {
   const searchBody = new FormData();
 
   searchBody.set("txt", "");
@@ -10896,7 +10896,11 @@ const func = async () => {
 
   const body = JSON.parse(await response.text());
 
-  const allDoctypes = body.message.map((d) => d.value);
+  return body.message.map((d) => d.value);
+};
+
+const func = async () => {
+  const allDoctypes = await getAllDocTypes();
 
   for (const [roleName, doctypes] of Object.entries(categoriesDoctypes)) {
     const nonExistentDoctypes = doctypes.filter(

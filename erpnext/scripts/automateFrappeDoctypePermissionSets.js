@@ -53,6 +53,27 @@ const defaultDocPermissions = [
   },
 ];
 
+const compareParams = [
+  "if_owner",
+  "permlevel",
+  "select",
+  "read",
+  "write",
+  "create",
+  "delete",
+  "submit",
+  "cancel",
+  "amend",
+  "report",
+  "export",
+  "import",
+  "share",
+  "print",
+  "email",
+  "idx",
+  "role",
+];
+
 const doctypes = [
   "Process Subscription",
   "Subcontracting BOM",
@@ -490,7 +511,39 @@ const segmentArray = (array, batchLength) =>
     array.slice(i * batchLength, (i + 1) * batchLength)
   );
 
+const getAllDocTypes = async () => {
+  const searchBody = new FormData();
+
+  searchBody.set("txt", "");
+  searchBody.set("doctype", "DocType");
+
+  const response = await fetch(
+    `https://app.nexforce.co/api/method/frappe.desk.search.search_link`,
+    {
+      method: "POST",
+      headers: {
+        // frappe.csrf_token is a global variable
+        "X-Frappe-Csrf-Token": frappe.csrf_token,
+      },
+      body: searchBody,
+    }
+  );
+
+  const body = JSON.parse(await response.text());
+
+  return body.message.map((d) => d.value);
+};
+
 const func = async () => {
+  const allDoctypes = await getAllDocTypes();
+
+  const nonExistentDoctypes = doctypes.filter((d) => !allDoctypes.includes(d));
+
+  if (nonExistentDoctypes.length) {
+    console.warn("Nonexistent doctypes", nonExistentDoctypes);
+    return;
+  }
+
   let i = 0;
 
   for (const batch of segmentArray(doctypes, 25))
@@ -518,6 +571,19 @@ const func = async () => {
         }
 
         const [doc] = docs;
+        const { permissions } = doc;
+
+        if (
+          permissions.length === 2 &&
+          permissions.every((p, i) =>
+            compareParams.every(
+              (param) => p[param] === defaultDocPermissions[i][param]
+            )
+          )
+        ) {
+          console.log(`${++i}/${doctypes.length}: Already altered: ${doctype}`);
+          return;
+        }
 
         const newDoc = {
           ...doc,
@@ -548,8 +614,17 @@ const func = async () => {
         const saveBody = await saveResponse.text();
 
         if (!saveBody.includes("Saved")) {
-          console.log(saveBody);
-          console.log(`${++i}/${doctypes.length}: Error creating: ${doctype}`);
+          const duplicateFields = saveBody.includes(
+            "appears multiple times in rows"
+          );
+
+          if (!duplicateFields) console.log(saveBody);
+
+          console.log(
+            `${++i}/${doctypes.length}: ${
+              duplicateFields ? "Duplicate fields" : "Error creating"
+            }: ${doctype}`
+          );
           return;
         }
 
