@@ -64,12 +64,6 @@ const compareParams = [
   "submit",
   "cancel",
   "amend",
-  "report",
-  "export",
-  "import",
-  "share",
-  "print",
-  "email",
   "idx",
   "role",
 ];
