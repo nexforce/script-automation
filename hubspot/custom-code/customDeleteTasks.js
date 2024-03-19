@@ -16,7 +16,11 @@ async function getAssociations(objectType, objectId, toObjectType) {
 
     return associations;
   } catch (err) {
-    console.log(err);
+    console.error(
+      "Erro ao obter associações:",
+      err.response ? err.response.data : err.message
+    );
+    throw err;
   }
 }
 
@@ -29,7 +33,11 @@ async function getTask(taskId) {
 
     return task;
   } catch (err) {
-    console.log(err);
+    console.error(
+      "Erro ao obter tarefa:",
+      err.response ? err.response.data : err.message
+    );
+    throw err;
   }
 }
 
@@ -42,37 +50,49 @@ async function deleteTask(taskToDelete) {
 
     return taskDeleted.data;
   } catch (err) {
-    console.log(err);
+    console.error(
+      "Erro ao excluir tarefa:",
+      err.response ? err.response.data : err.message
+    );
+    throw err;
   }
 }
 
 exports.main = async (event, callback) => {
   const { objectId } = event.inputFields;
 
-  const associations = await getAssociations("leads", objectId, "task");
-  const {
-    data: { results },
-  } = associations;
+  try {
+    const associations = await getAssociations("leads", objectId, "task");
+    const {
+      data: { results },
+    } = associations;
 
-  for (const result of results) {
-    const taskId = result.toObjectId;
-    const task = await getTask(taskId);
+    for (const result of results) {
+      const taskId = result.toObjectId;
+      const task = await getTask(taskId);
 
-    const objectSource = task.data.properties.hs_object_source;
-    const taskStatus = task.data.properties.hs_task_status;
+      const objectSource = task.data.properties.hs_object_source;
+      const taskStatus = task.data.properties.hs_task_status;
 
-    if (
-      objectSource === "AUTOMATION_PLATFORM" &&
-      taskStatus === "NOT_STARTED"
-    ) {
-      console.log("TASK PARA DELETAR", task.data);
-      await deleteTask(taskId);
+      if (
+        objectSource === "AUTOMATION_PLATFORM" &&
+        taskStatus === "NOT_STARTED"
+      ) {
+        console.log("TASK PARA DELETAR", task.data);
+        await deleteTask(taskId);
+      }
     }
-  }
 
-  callback({
-    outputFields: { objectId },
-  });
+    callback({
+      outputFields: { objectId },
+    });
+  } catch (error) {
+    console.error(
+      "Ocorreu um erro inesperado:",
+      err.response ? err.response.data : err.message
+    );
+    throw error;
+  }
 };
 
 // [FINAL]
