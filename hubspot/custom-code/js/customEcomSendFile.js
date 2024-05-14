@@ -214,7 +214,7 @@ exports.main = async (event, callback) => {
     if (!event.inputFields.fatura) {
       console.log("No document to send.");
       return await callback({
-        outputFields: { hs_execution_state: "ERROR" },
+        outputFields: { hs_execution_state: "FAIL_CONTINUE" },
       });
     }
 
@@ -251,7 +251,7 @@ exports.main = async (event, callback) => {
       ) {
         console.log("Error reading document.");
         return await callback({
-          outputFields: { hs_execution_state: "ERROR" },
+          outputFields: { hs_execution_state: "FAIL_CONTINUE" },
         });
       }
 
@@ -284,7 +284,7 @@ exports.main = async (event, callback) => {
     }
   } catch (err) {
     await callback({
-      outputFields: { hs_execution_state: "ERROR" },
+      outputFields: { hs_execution_state: "FAIL_CONTINUE" },
     });
     console.error(err);
     // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
