@@ -98,7 +98,8 @@ function ucPropertiesFormatter(analysisId, data) {
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
       produto_risk3: "express_full",
       recomendacao_final:
-        data.analise.classificacao == "verde" &&
+        data.analise.classificacao == "verde" ? "Verde" : "Vermelho",
+      alerta_de_restricao:
         data.analise.resultado_da_analise.alerta == "verde"
           ? "Verde"
           : "Vermelho",

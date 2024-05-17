@@ -83,7 +83,8 @@ function ucPropertiesFormatter(analysisId, data) {
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
       produto_risk3: productMapper[data.produto],
       recomendacao_final:
-        data.analise.classificacao == "verde" &&
+        data.analise.classificacao == "verde" ? "Verde" : "Vermelho",
+      alerta_de_restricao:
         data.analise.resultado_da_analise.alerta == "verde"
           ? "Verde"
           : "Vermelho",
@@ -108,6 +109,7 @@ exports.main = async (event, callback) => {
         analysisId,
         analysisResult.data
       );
+      console.log(infosToUpdate);
 
       await updateUCBy(event.object.objectId, infosToUpdate);
 
@@ -148,7 +150,7 @@ exports.main(
     inputFields: {
       identificador__id_: "ent3801_94802",
     },
-    object: { objectId: 12887363680 },
+    object: { objectId: 13278618279 },
   },
   console.log
 );
