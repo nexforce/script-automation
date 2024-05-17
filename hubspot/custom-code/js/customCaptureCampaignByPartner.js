@@ -14,11 +14,16 @@ const TAXA_DE_BTC_PROPERTY = "taxa_de_btc";
 const BENEFICIOS_PROPERTY = "beneficios";
 const BENEFICIOS_ESPECIAL_ADICIONAL_PROPERTY = "beneficios__especial_adicional";
 
-const CAMPANHA_MODIFICADA_TABELA_DE_CORRETAGEM_PROPERTY = "campanha_modificada__tabela_de_corretagem";
-const CAMPANHA_MODIFICADA_TAXA_DE_BTC_PROPERTY = "campanha_modificada__taxa_de_btc";
-const CAMPANHA_MODIFICADA_BENEFICIOS_PROPERTY = "campanha_modificada__beneficios";
-const CAMPANHA_MODIFICADA_BENEFICIO_ESPECIAL_ADICIONAL_PROPERTY = "campanha_modificada__beneficio_especial_adicional";
-const CAMPANHA_MODIFICADA_REFERRAL_ID_PARCEIRO_PROPERTY = "campanha_modificada__referral_id_parceiro";
+const CAMPANHA_MODIFICADA_TABELA_DE_CORRETAGEM_PROPERTY =
+  "campanha_modificada__tabela_de_corretagem";
+const CAMPANHA_MODIFICADA_TAXA_DE_BTC_PROPERTY =
+  "campanha_modificada__taxa_de_btc";
+const CAMPANHA_MODIFICADA_BENEFICIOS_PROPERTY =
+  "campanha_modificada__beneficios";
+const CAMPANHA_MODIFICADA_BENEFICIO_ESPECIAL_ADICIONAL_PROPERTY =
+  "campanha_modificada__beneficio_especial_adicional";
+const CAMPANHA_MODIFICADA_REFERRAL_ID_PARCEIRO_PROPERTY =
+  "campanha_modificada__referral_id_parceiro";
 
 exports.main = async (event, callback) => {
   const hubspotClient = new hubspot.Client({
@@ -36,27 +41,37 @@ exports.main = async (event, callback) => {
       });
     }
 
-    const matchingPartnerResponse = await hubspotClient.crm.objects.searchApi.doSearch(PARTNER_OBJECT_TYPE_ID, {
-      properties: [REF_ID_PROPERTY_ID, FAIXA_DE_CORRETAGEM_PROPERTY, TAXA_DE_BTC_PROPERTY, BENEFICIOS_PROPERTY, BENEFICIOS_ESPECIAL_ADICIONAL_PROPERTY],
-      filterGroups: [
+    const matchingPartnerResponse =
+      await hubspotClient.crm.objects.searchApi.doSearch(
+        PARTNER_OBJECT_TYPE_ID,
         {
-          filters: [
+          properties: [
+            REF_ID_PROPERTY_ID,
+            FAIXA_DE_CORRETAGEM_PROPERTY,
+            TAXA_DE_BTC_PROPERTY,
+            BENEFICIOS_PROPERTY,
+            BENEFICIOS_ESPECIAL_ADICIONAL_PROPERTY,
+          ],
+          filterGroups: [
             {
-              propertyName: REF_ID_PROPERTY_ID,
-              operator: "EQ",
-              value: utmPart,
+              filters: [
+                {
+                  propertyName: REF_ID_PROPERTY_ID,
+                  operator: "EQ",
+                  value: utmPart,
+                },
+              ],
             },
           ],
-        },
-      ],
-      limit: 1,
-    });
+          limit: 1,
+        }
+      );
 
     if (matchingPartnerResponse.total !== 1) {
       console.log(`Info: no partner found with refId ${utmPart}`);
       // Definir o estado de execução como ERROR quando nenhum parceiro for encontrado
       return callback({
-        outputFields: { hs_execution_state: "ERROR" },
+        outputFields: { hs_execution_state: "FAIL_CONTINUE" },
       });
     }
 
@@ -64,7 +79,8 @@ exports.main = async (event, callback) => {
     const faixaDeCorretagem = partner.properties[FAIXA_DE_CORRETAGEM_PROPERTY];
     const taxaDeBTC = partner.properties[TAXA_DE_BTC_PROPERTY];
     const beneficios = partner.properties[BENEFICIOS_PROPERTY];
-    const beneficiosEspecialAdicional = partner.properties[BENEFICIOS_ESPECIAL_ADICIONAL_PROPERTY];
+    const beneficiosEspecialAdicional =
+      partner.properties[BENEFICIOS_ESPECIAL_ADICIONAL_PROPERTY];
 
     console.log("Partner found:");
     console.log(partner);
@@ -72,7 +88,8 @@ exports.main = async (event, callback) => {
     // Atualizar propriedades do contato
     const updateProperties = {};
     if (faixaDeCorretagem) {
-      updateProperties[CAMPANHA_MODIFICADA_TABELA_DE_CORRETAGEM_PROPERTY] = faixaDeCorretagem;
+      updateProperties[CAMPANHA_MODIFICADA_TABELA_DE_CORRETAGEM_PROPERTY] =
+        faixaDeCorretagem;
     }
     if (taxaDeBTC) {
       updateProperties[CAMPANHA_MODIFICADA_TAXA_DE_BTC_PROPERTY] = taxaDeBTC;
@@ -81,9 +98,12 @@ exports.main = async (event, callback) => {
       updateProperties[CAMPANHA_MODIFICADA_BENEFICIOS_PROPERTY] = beneficios;
     }
     if (beneficiosEspecialAdicional) {
-      updateProperties[CAMPANHA_MODIFICADA_BENEFICIO_ESPECIAL_ADICIONAL_PROPERTY] = beneficiosEspecialAdicional;
+      updateProperties[
+        CAMPANHA_MODIFICADA_BENEFICIO_ESPECIAL_ADICIONAL_PROPERTY
+      ] = beneficiosEspecialAdicional;
     }
-    updateProperties[CAMPANHA_MODIFICADA_REFERRAL_ID_PARCEIRO_PROPERTY] = utmPart;
+    updateProperties[CAMPANHA_MODIFICADA_REFERRAL_ID_PARCEIRO_PROPERTY] =
+      utmPart;
 
     console.log("Updated contact properties:");
     console.log(updateProperties);

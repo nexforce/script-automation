@@ -31,21 +31,25 @@ exports.main = async (event, callback) => {
     }
 
     // Realizando a busca pelo contato correspondente
-    const matchingContactResponse = await hubspotClient.crm.objects.searchApi.doSearch(CONTACT_OBJECT_TYPE_ID, {
-      properties: [REFERRAL_PROPERTY_ID, REFERRED_CONTACTS_PROPERTY_ID], // Adicionando a propriedade REFERRED_CONTACTS_PROPERTY_ID na busca
-      filterGroups: [
+    const matchingContactResponse =
+      await hubspotClient.crm.objects.searchApi.doSearch(
+        CONTACT_OBJECT_TYPE_ID,
         {
-          filters: [
+          properties: [REFERRAL_PROPERTY_ID, REFERRED_CONTACTS_PROPERTY_ID], // Adicionando a propriedade REFERRED_CONTACTS_PROPERTY_ID na busca
+          filterGroups: [
             {
-              propertyName: REFERRAL_PROPERTY_ID,
-              operator: "EQ",
-              value: referencedBy,
+              filters: [
+                {
+                  propertyName: REFERRAL_PROPERTY_ID,
+                  operator: "EQ",
+                  value: referencedBy,
+                },
+              ],
             },
           ],
-        },
-      ],
-      limit: 1,
-    });
+          limit: 1,
+        }
+      );
 
     console.log("Matching Contact Response:", matchingContactResponse);
 
@@ -54,7 +58,8 @@ exports.main = async (event, callback) => {
       console.log("Contact Found:", contact);
 
       // Obtendo o número atual de contatos indicados pelo contato encontrado
-      const referredContactsCount = parseInt(contact.properties[REFERRED_CONTACTS_PROPERTY_ID], 10) || 0; // Convertendo para número
+      const referredContactsCount =
+        parseInt(contact.properties[REFERRED_CONTACTS_PROPERTY_ID], 10) || 0; // Convertendo para número
 
       console.log("Referred Contacts Count:", referredContactsCount);
 
@@ -67,11 +72,17 @@ exports.main = async (event, callback) => {
 
       try {
         // Realizando a atualização das propriedades do contato
-        await hubspotClient.crm.objects.basicApi.update(CONTACT_OBJECT_TYPE_ID, contact.id, {
-          properties: updatedProperties,
-        });
+        await hubspotClient.crm.objects.basicApi.update(
+          CONTACT_OBJECT_TYPE_ID,
+          contact.id,
+          {
+            properties: updatedProperties,
+          }
+        );
 
-        console.log(`Referred contacts count updated for contact with ID ${contact.id}`);
+        console.log(
+          `Referred contacts count updated for contact with ID ${contact.id}`
+        );
       } catch (error) {
         console.error("Error updating contact properties:", error);
         throw error;
@@ -79,7 +90,7 @@ exports.main = async (event, callback) => {
     } else {
       console.log(`Info: No contact found with referral ID ${referencedBy}`);
       return callback({
-        outputFields: { hs_execution_state: "ERROR" },
+        outputFields: { hs_execution_state: "FAIL_CONTINUE" },
       });
     }
 
