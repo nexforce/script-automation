@@ -182,7 +182,7 @@ const func = async () => {
   const data = (
     await segmentPromises(
       properties.map((p) => () => getRecordsCount(p)),
-      1000
+      50
     )
   ).flat();
 
