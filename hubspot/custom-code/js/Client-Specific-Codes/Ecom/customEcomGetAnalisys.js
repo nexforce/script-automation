@@ -82,19 +82,15 @@ function ucPropertiesFormatter(analysisId, data) {
       ),
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
       produto_risk3: productMapper[data.produto],
-      recomendacao_final:
-        data.analise.classificacao == "verde" ? "Verde" : "Vermelho",
-      alerta_de_restricao:
-        data.analise.resultado_da_analise.alerta == "verde"
-          ? "Verde"
-          : "Vermelho",
+      recomendacao_final: data.analise.classificacao,
+      alerta_de_restricao: data.analise.resultado_da_analise.alerta,
       score: data.analise.calculos.score_final.toFixed(2),
+      score_alerta_de_restricao: data.analise.calculos.fator_de_alerta,
       nivel_de_aprovacao:
         productMapper[data.produto] == "express_full" ? "Nivel 2" : "Nivel 1",
     },
   };
 }
-
 exports.main = async (event, callback) => {
   try {
     const {
@@ -148,7 +144,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      identificador__id_: "ent3801_94802",
+      identificador__id_: "ent1363_65657",
     },
     object: { objectId: 13278618279 },
   },
