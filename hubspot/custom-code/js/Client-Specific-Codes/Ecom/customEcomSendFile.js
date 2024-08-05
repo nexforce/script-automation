@@ -137,8 +137,9 @@ function ucPropertiesFormatter(data) {
       faixa_de_valor_mensal_da_conta_de_luz: totalChargesMapper(
         data.totalCharges
       ),
+      valor_da_fatura: data.totalCharges,
       geracao_propria: null,
-      cnpj: cnpjFormatter(data.customer.cnpj.toString()),
+      cnpj: data.customer.cnpj && cnpjFormatter(data.customer.cnpj.toString()),
       razao_social: data.customer.name,
       cidade: data.customer.address.city,
       estado: stateMapper[data.customer.address.state],
