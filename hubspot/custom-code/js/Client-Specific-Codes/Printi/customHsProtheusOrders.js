@@ -6,6 +6,7 @@ dotenv.config();
 // Ao mandar pro custom code do fluxo, copiar a partir desta linha até o comentário [FINAL]
 
 const axios = require("axios");
+
 // Protheus informations
 const protheusUser = process.env.PROTHEUS_USER;
 const protheusPassword = process.env.PROTHEUS_PASSWORD;
@@ -15,15 +16,7 @@ const protheusBaseUrl =
 // Hubspot informations
 const hubspotBaseUrl = "https://api.hubapi.com";
 const hubspotDealToken = process.env.HUBSPOT_DEAL_TOKEN;
-const associationTypeIdDealDealItem = 61;
 const dealItemObjectId = "2-22504469";
-
-// todo 1 -> mapear inputFields de deal - ok
-// todo 2 -> buscar associações desse deal com deal item - ok
-// todo 3 -> encontrar deal items pela API de search - ok
-// todo 4 -> fazer um mapper para polular a propriedade items do pedido - ok
-// todo 5 -> fazer depara de propriedades e construção do body - ok
-// todo 6 -> criar pedido no Protheus
 
 async function protheusAuth() {
   try {
@@ -39,9 +32,9 @@ async function protheusAuth() {
   }
 }
 
-async function getDealAssociationsBy(dealId, dealItemObjectId) {
+async function getDealAssociationsBy(dealId, itemObjectId) {
   try {
-    const url = `${hubspotBaseUrl}/crm/v4/objects/deal/${dealId}/associations/${dealItemObjectId}`;
+    const url = `${hubspotBaseUrl}/crm/v4/objects/deal/${dealId}/associations/${itemObjectId}`;
 
     const headers = {
       Authorization: `Bearer ${hubspotDealToken}`,
@@ -57,9 +50,9 @@ async function getDealAssociationsBy(dealId, dealItemObjectId) {
   }
 }
 
-async function searchDealItemBy(dealItemId, dealItemObjectId) {
+async function searchDealItemBy(dealItemId, itemObjectId) {
   try {
-    const url = `${hubspotBaseUrl}/crm/v3/objects/${dealItemObjectId}/search`;
+    const url = `${hubspotBaseUrl}/crm/v3/objects/${itemObjectId}/search`;
 
     const headers = {
       Authorization: `Bearer ${hubspotDealToken}`,
@@ -131,7 +124,10 @@ function dealItemsMapper(dealItems) {
     for (const key of keysMapper) {
       if (item[key]) {
         dealItemMapped = Object.assign(dealItemMapped, {
-          [key.toUpperCase()]: item[key],
+          [key.toUpperCase()]:
+            key == "c6_prcven" || key == "c6_qtdven"
+              ? Math.abs(item[key])
+              : item[key],
         });
       }
     }
@@ -199,12 +195,12 @@ exports.main = async (event, callback) => {
   console.log("Pedido a ser criado: ", dataToSend);
 
   try {
-    // const { access_token } = await protheusAuth();
+    const { access_token } = await protheusAuth();
 
-    // console.log("Criando pedido...");
-    // const orderCreated = await createOrderOnProtheus(dataToSend, access_token);
+    console.log("Criando pedido...");
+    const orderCreated = await createOrderOnProtheus(dataToSend, access_token);
 
-    // console.log("Pedido criado:", orderCreated);
+    console.log("Pedido criado:", orderCreated);
 
     callback({
       outputFields: {
@@ -237,13 +233,13 @@ exports.main(
       c5_xest: "BA",
       c5_xcep: "41760-000",
       c5_xmemo: "test message",
-      c5_xnum: "20001",
+      c5_xnum: "999884",
       c5_xagluti: "N",
       c5_vend1: "000001",
       c5_xforma: "BOL",
       c5_xtipo: "1",
     },
-    object: { objectId: 21088681610 },
+    object: { objectId: 21300964610 },
   },
   console.log
 );
