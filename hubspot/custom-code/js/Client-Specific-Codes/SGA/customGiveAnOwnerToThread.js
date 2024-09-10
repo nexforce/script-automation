@@ -150,7 +150,7 @@ exports.main = async (event, callback) => {
         outputFields: {
           hs_execution_state: "FAIL_CONTINUE",
           agentSelected: false,
-          agentId: null,
+          agent: null,
           message: "No available agents...",
         },
       });
@@ -191,7 +191,7 @@ exports.main = async (event, callback) => {
         outputFields: {
           hs_execution_state: "FAIL_CONTINUE",
           agentSelected: false,
-          agentId: null,
+          agent: null,
           message: "Agents with full capacity...",
         },
       });
