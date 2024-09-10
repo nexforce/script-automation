@@ -79,7 +79,7 @@ async function searchUsersBy(internalIds) {
 
 async function getThreadsAfter(date) {
   try {
-    const url = `${baseUrl}conversations/v3/conversations/threads?inboxId=593982391&sort=latestMessageTimestamp&latestMessageTimestampAfter=${date}&limit=100`;
+    const url = `${baseUrl}conversations/v3/conversations/threads?inboxId=593982391&sort=latestMessageTimestamp&latestMessageTimestampAfter=${date}&limit=200`;
 
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -157,7 +157,7 @@ exports.main = async (event, callback) => {
     }
 
     const now = new Date();
-    const tirtyMinutesAgo = new Date(now.getTime() - 1800000);
+    const tirtyMinutesAgo = new Date(now.getTime() - 3600000);
     const formattedTirtyMinutesAgo = tirtyMinutesAgo.toISOString();
     const threads = await getThreadsAfter(formattedTirtyMinutesAgo);
 
@@ -225,7 +225,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      areaAtentimento: "Parcelas de clientes",
+      areaAtentimento: "T.I.",
     },
     object: { objectId: "" },
   },
