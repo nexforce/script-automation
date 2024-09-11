@@ -164,17 +164,18 @@ exports.main = async (event, callback) => {
     let agentsCapacity = [];
 
     for (const agent of users.results) {
-      const agentEmail = agent.properties.hs_email;
+      const actorId = `A-${agent.properties.hs_internal_user_id}`;
 
       const concurrentChats = threads.results.filter((thread) => {
         if (thread.assignedTo) {
-          return thread.assignedTo == agentEmail && thread.status == "OPEN";
+          return thread.assignedTo == actorId && thread.status == "OPEN";
         }
       });
-      const concurrentChatsNumber = concurrentChats.length;
 
+      const concurrentChatsNumber = concurrentChats.length;
+      console.log();
       agentsCapacity.push({
-        agentEmail,
+        agentEmail: agent.properties.hs_email,
         capacity: 4 - concurrentChatsNumber,
       });
     }
