@@ -22,27 +22,6 @@ async function loginOnRisk3() {
   }
 }
 
-async function sendAnalysis(data) {
-  try {
-    const url = `https://express-api.risk3.live/api/v0/analises`;
-
-    const headers = {
-      ["Venidera-AuthToken"]: data.token,
-    };
-
-    const body = {
-      cnpjs: [data.document],
-    };
-
-    const response = await axios({ url, method: "POST", headers, data: body });
-
-    return response.data;
-  } catch (error) {
-    console.log("Error sending analysis:", error.message);
-    throw error;
-  }
-}
-
 async function getAnalysisBy(id, token) {
   try {
     let url = `https://express-api.risk3.live/api/v0/analises/id/${id}`;
@@ -80,6 +59,12 @@ async function updateUCBy(id, data) {
 }
 
 function ucPropertiesFormatter(analysisId, data) {
+  const productMapper = {
+    ["Xpress Full"]: "express_full",
+    ["Xpress Light"]: "express_light",
+    ["Xpress Pessoa Física"]: "express_pf",
+  };
+
   return {
     properties: {
       identificador__id_: analysisId,
@@ -96,15 +81,13 @@ function ucPropertiesFormatter(analysisId, data) {
         0
       ),
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
-      produto_risk3: "express_full",
-      recomendacao_final:
-        data.analise.classificacao == "verde" ? "Verde" : "Vermelho",
-      alerta_de_restricao:
-        data.analise.resultado_da_analise.alerta == "verde"
-          ? "Verde"
-          : "Vermelho",
+      produto_risk3: productMapper[data.produto],
+      recomendacao_final: data.analise.classificacao,
+      alerta_de_restricao: data.analise.resultado_da_analise.alerta,
       score: data.analise.calculos.score_final.toFixed(2),
-      nivel_de_aprovacao: "Nivel 2",
+      score_alerta_de_restricao: data.analise.calculos.fator_de_alerta,
+      nivel_de_aprovacao:
+        productMapper[data.produto] == "express_full" ? "Nivel 2" : "Nivel 1",
     },
   };
 }
@@ -115,13 +98,7 @@ exports.main = async (event, callback) => {
       data: { token },
     } = await loginOnRisk3();
 
-    const dataTosend = {
-      document: event.inputFields.cnpj,
-      token,
-    };
-
-    const analysisResponse = await sendAnalysis(dataTosend);
-    const analysisId = analysisResponse.data.records[0].id;
+    const analysisId = event.inputFields.identificador__id_;
     const analysisResult = await getAnalysisBy(analysisId, token);
 
     if (analysisResult.data.status === "Concluída") {
@@ -129,6 +106,7 @@ exports.main = async (event, callback) => {
         analysisId,
         analysisResult.data
       );
+      console.log(infosToUpdate);
 
       await updateUCBy(event.object.objectId, infosToUpdate);
 
@@ -141,20 +119,12 @@ exports.main = async (event, callback) => {
       });
     }
 
-    await updateUCBy(event.object.objectId, {
-      properties: {
-        identificador__id_: analysisId,
-        produto_risk3: "express_full",
-      },
-    });
-
     return await callback({
       outputFields: {
         hs_execution_state: "SUCCESS",
         hs_object_id: event.object.objectId,
         identificador__id_: analysisId,
         recomendacao_final: null,
-        produto_risk3: "express_full",
       },
     });
   } catch (err) {
@@ -175,9 +145,9 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      cnpj: "13873870657",
+      identificador__id_: "ent3801_94802",
     },
-    object: { objectId: 12887363680 },
+    object: { objectId: 13278618279 },
   },
   console.log
 );
