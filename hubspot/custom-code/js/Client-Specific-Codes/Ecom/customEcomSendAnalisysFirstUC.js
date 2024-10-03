@@ -24,14 +24,19 @@ async function loginOnRisk3() {
 
 async function sendAnalysis(data) {
   try {
-    const url = `https://express-api.risk3.live/api/v0/analises`;
+    let url;
+    if (data.documentType == "cpf") {
+      url = "https://express-api.risk3.live/api/v0/analises/cpf";
+    } else {
+      url = `https://express-api.risk3.live/api/v0/analises?product=${data.product}`;
+    }
 
     const headers = {
       ["Venidera-AuthToken"]: data.token,
     };
 
     const body = {
-      cnpjs: [data.document],
+      [`${data.documentType}s`]: [data.document],
     };
 
     const response = await axios({ url, method: "POST", headers, data: body });
@@ -80,6 +85,12 @@ async function updateUCBy(id, data) {
 }
 
 function ucPropertiesFormatter(analysisId, data) {
+  const productMapper = {
+    ["Xpress Full"]: "express_full",
+    ["Xpress Light"]: "express_light",
+    ["Xpress Pessoa Física"]: "express_pf",
+  };
+
   return {
     properties: {
       identificador__id_: analysisId,
@@ -96,33 +107,94 @@ function ucPropertiesFormatter(analysisId, data) {
         0
       ),
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
-      produto_risk3: "express_full",
-      recomendacao_final:
-        data.analise.classificacao == "verde" ? "Verde" : "Vermelho",
-      alerta_de_restricao:
-        data.analise.resultado_da_analise.alerta == "verde"
-          ? "Verde"
-          : "Vermelho",
+      produto_risk3: productMapper[data.produto],
+      recomendacao_final: data.analise.classificacao,
+      alerta_de_restricao: data.analise.resultado_da_analise.alerta,
       score: data.analise.calculos.score_final.toFixed(2),
-      nivel_de_aprovacao: "Nivel 2",
+      score_alerta_de_restricao: data.analise.calculos.fator_de_alerta,
+      nivel_de_aprovacao:
+        productMapper[data.produto] == "express_full" ? "Nivel 2" : "Nivel 1",
     },
   };
 }
 
+function getDocumentType(document) {
+  document = document.replace(/\D/g, "");
+
+  const options = [
+    {
+      documentType: "cpf",
+      length: 11,
+    },
+    {
+      documentType: "cnpj",
+      length: 14,
+    },
+  ];
+
+  for (const option of options) {
+    if (document.length == option.length) {
+      return option.documentType;
+    }
+  }
+
+  return "Invalid document type";
+}
+
 exports.main = async (event, callback) => {
   try {
+    const start = new Date();
+
     const {
       data: { token },
     } = await loginOnRisk3();
+    console.log("LOGOU");
 
-    const dataTosend = {
-      document: event.inputFields.cnpj,
-      token,
-    };
+    const documentType = getDocumentType(event.inputFields.cnpj);
+    console.log("BUSCOU O TIPO DE DOCUMENTO");
 
-    const analysisResponse = await sendAnalysis(dataTosend);
-    const analysisId = analysisResponse.data.records[0].id;
+    let analysisId;
+    let dataTosend;
+    let analysisResponse;
+
+    switch (documentType) {
+      case "cpf":
+        dataTosend = {
+          documentType,
+          document: event.inputFields.cnpj,
+          token,
+        };
+
+        analysisResponse = await sendAnalysis(dataTosend);
+
+        analysisId = analysisResponse.data.records[0].id;
+        break;
+
+      case "cnpj":
+        dataTosend = {
+          documentType,
+          document: event.inputFields.cnpj,
+          token,
+          product: "express_light",
+        };
+
+        console.log("ENVIANDO ANÁLISE CNPJ");
+
+        analysisResponse = await sendAnalysis(dataTosend);
+
+        console.log("ANÁLISE CNPJ ENVIADA");
+
+        analysisId = analysisResponse?.data.records[0].id;
+        break;
+
+      default:
+        console.log(documentType);
+        break;
+    }
+
     const analysisResult = await getAnalysisBy(analysisId, token);
+
+    console.log("BUSCOU A ANÁLISE");
 
     if (analysisResult.data.status === "Concluída") {
       const infosToUpdate = ucPropertiesFormatter(
@@ -144,9 +216,15 @@ exports.main = async (event, callback) => {
     await updateUCBy(event.object.objectId, {
       properties: {
         identificador__id_: analysisId,
-        produto_risk3: "express_full",
+        produto_risk3: dataTosend.product || "express_pf",
+        recomendacao_final: null,
       },
     });
+
+    const end = new Date();
+    const time = (end - start) / 1000;
+
+    console.log(`Tempo de execução: ${time} segundos`);
 
     return await callback({
       outputFields: {
@@ -154,7 +232,7 @@ exports.main = async (event, callback) => {
         hs_object_id: event.object.objectId,
         identificador__id_: analysisId,
         recomendacao_final: null,
-        produto_risk3: "express_full",
+        produto_risk3: dataTosend.product || "express_pf",
       },
     });
   } catch (err) {
@@ -175,9 +253,9 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      cnpj: "13873870657",
+      cnpj: "31.274.296/0001-62",
     },
-    object: { objectId: 12887363680 },
+    object: { objectId: 15448542571 },
   },
   console.log
 );

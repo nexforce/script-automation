@@ -137,47 +137,22 @@ function ucPropertiesFormatter(data) {
       faixa_de_valor_mensal_da_conta_de_luz: totalChargesMapper(
         data.totalCharges
       ),
-      valor_da_fatura: data.totalCharges,
       geracao_propria: null,
-      cnpj: data.customer.cnpj && cnpjFormatter(data.customer.cnpj.toString()),
+      cnpj: cnpjFormatter(data.customer.cnpj.toString()),
       razao_social: data.customer.name,
       cidade: data.customer.address.city,
       estado: stateMapper[data.customer.address.state],
       cep: data.customer.address.zipCode,
-      logradouro: data.customer.address.streetAndNumber,
-      bairro: data.customer.address.district,
-      consumo_mwm: calculateMwmBy(data.items),
+      consumo__mwm_: calculateMwmBy(data.items),
       ambiente_de_contratacao: null,
-      demanda_contratada_p_kw: getConsumptionOrDemandBy(
-        data.items,
-        "demand",
-        "peak",
-        "contract"
-      ),
-      demanda_contratada_fp_kw: getConsumptionOrDemandBy(
-        data.items,
-        "demand",
-        "off-peak",
-        "contract"
-      ),
-      consumo_pico: getConsumptionOrDemandBy(
-        data.items,
-        "energy",
-        "peak",
-        "billed"
-      ),
-      consumo_fora_pico: getConsumptionOrDemandBy(
-        data.items,
-        "energy",
-        "off-peak",
-        "billed"
-      ),
-      consumo_reservado: getConsumptionOrDemandBy(
-        data.items,
-        "energy",
-        "reserved",
-        "billed"
-      ),
+      demanda_contratada_p_kw:
+        data.items.find(
+          (item) => item.type === "demand" && item.period === "peak"
+        )?.contract || 0,
+      demanda_contratada_fp_kw:
+        data.items.find(
+          (item) => item.type === "demand" && item.period === "off-peak"
+        )?.contract || 0,
       modalidade_tarifaria: data.tariffModality === "green" ? "Verde" : "Azul",
       subgrupo_tarifario: data.subgroup,
       setor_ocr: data.class,
@@ -232,14 +207,6 @@ function calculateMwmBy(items) {
     0
   );
   return (billedSum / 1000 / 730).toFixed(2);
-}
-
-function getConsumptionOrDemandBy(items, type, period, propertie) {
-  const result = items.find(
-    (item) => item.type === type && item.period === period
-  );
-
-  return result ? result[propertie] : 0;
 }
 
 exports.main = async (event, callback) => {
@@ -333,9 +300,9 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      fatura: 167765422095,
+      fatura: 166800232995,
     },
-    object: { objectId: 13295519125 },
+    object: { objectId: 12887363680 },
   },
   console.log
 );
