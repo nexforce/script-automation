@@ -116,7 +116,7 @@ function selectAgent(agentsWithCapacity) {
 }
 
 exports.main = async (event, callback) => {
-  const { areaAtentimento } = event.inputFields;
+  const { areaAtentimento, areaAtentimentoByOwner } = event.inputFields;
 
   const teamMapper = {
     Mobilidade: "2.1.1.1.1. Produtos - Mobilidade - Active",
@@ -139,7 +139,8 @@ exports.main = async (event, callback) => {
     const teams = await getUsersTeams();
 
     let { userIds } = teams.results.find(
-      (team) => team.name == teamMapper[areaAtentimento]
+      (team) =>
+        team.name == teamMapper[areaAtentimento || areaAtentimentoByOwner]
     );
 
     const users = await searchUsersBy(userIds);
@@ -173,7 +174,7 @@ exports.main = async (event, callback) => {
       });
 
       const concurrentChatsNumber = concurrentChats.length;
-      console.log();
+
       agentsCapacity.push({
         agentEmail: agent.properties.hs_email,
         capacity: 4 - concurrentChatsNumber,
@@ -205,6 +206,7 @@ exports.main = async (event, callback) => {
         hs_execution_state: "SUCCESS",
         agentSelected: true,
         agent: agent.agentEmail,
+        areaAtentimento: areaAtentimento || areaAtentimentoByOwner,
         message: "Agent selected successfully.",
       },
     });
@@ -226,7 +228,8 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      areaAtentimento: "T.I.",
+      areaAtentimento: "",
+      areaAtentimentoByOwner: "T.I.",
     },
     object: { objectId: "" },
   },
