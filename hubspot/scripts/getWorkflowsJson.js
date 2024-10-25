@@ -4,12 +4,12 @@ const getCookie = (name) => {
   if (parts.length === 2) return parts.pop().split(";").shift();
 };
 
-const thisPortalId = document.querySelector(".navAccount-portalId").innerHTML;
+const portalId = window.location.toString().split(/[/?]/)?.[4];
 const token = getCookie("csrf.app");
 
 const getWfl = async ({ flowId, folderId }, folders) => {
   const response = await fetch(
-    `https://app.hubspot.com/api/automationplatform/v1/hybrid/${flowId}?hs_static_app=automation-ui-canvas&hs_static_app_version=1.30656&portalId=${thisPortalId}&clienttimeout=14000`,
+    `https://app.hubspot.com/api/automationplatform/v1/hybrid/${flowId}?hs_static_app=automation-ui-canvas&hs_static_app_version=1.30656&portalId=${portalId}&clienttimeout=14000`,
     {
       method: "GET",
       headers: {
@@ -37,7 +37,7 @@ const downloadTextFile = (filename, content) => {
 
 const func = async () => {
   const response = await fetch(
-    `https://app.hubspot.com/api/automationapps/v1/summaries/folders?platformSourceApps=WORKFLOWS_APP&platformSourceApps=WORKFLOWS_CLASSIC&platformSourceApps=DIRECT_API&platformSourceApps=PUBLIC_API&sortBy=name&sortOrder=ascending&excludePlatformSourceApps=FEEDBACK&excludePlatformSourceApps=LEAD_FLOW&excludePlatformSourceApps=FORM_FOLLOWUP_EMAIL&includeOptionalEnrollmentCounts=true&includeMigrationStatus=true&_ts=1684836833962&limit=500&portalId=${thisPortalId}&clienttimeout=14000&hs_static_app=automation-ui-index&hs_static_app_version=1.29703`,
+    `https://app.hubspot.com/api/automationapps/v1/summaries/folders?platformSourceApps=WORKFLOWS_APP&platformSourceApps=WORKFLOWS_CLASSIC&platformSourceApps=DIRECT_API&platformSourceApps=PUBLIC_API&sortBy=name&sortOrder=ascending&excludePlatformSourceApps=FEEDBACK&excludePlatformSourceApps=LEAD_FLOW&excludePlatformSourceApps=FORM_FOLLOWUP_EMAIL&includeOptionalEnrollmentCounts=true&includeMigrationStatus=true&_ts=1684836833962&limit=500&portalId=${portalId}&clienttimeout=14000&hs_static_app=automation-ui-index&hs_static_app_version=1.29703`,
     {
       method: "GET",
       headers: {
