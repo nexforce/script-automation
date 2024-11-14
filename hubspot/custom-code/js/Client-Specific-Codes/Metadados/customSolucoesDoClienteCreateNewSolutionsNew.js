@@ -1,3 +1,10 @@
+const dotenv = require("dotenv");
+
+// Utiliza o arquivo .env para obter o accessToken (Importante: nunca mandar o accessToken para o repositório!)
+dotenv.config();
+
+// Ao mandar pro custom code do fluxo, copiar a partir desta linha até o comentário [FINAL]
+
 const hubspot = require("@hubspot/api-client");
 
 const stringifyOrExtractError = (error) =>
@@ -5,16 +12,8 @@ const stringifyOrExtractError = (error) =>
     ? JSON.stringify(error.response, undefined, 2)
     : error.message;
 
-const throwMessage = (message) => {
-  throw {
-    message,
-  };
-};
-
 const throwError = (error, message) => {
-  throw {
-    message: `${message}: ${stringifyOrExtractError(error)}`,
-  };
+  throw new Error(`${message}: ${stringifyOrExtractError(error)}`);
 };
 
 const searchProductsRequestBody = (solutionsToCreate, after) => {
@@ -47,45 +46,19 @@ const searchProductsRequestBody = (solutionsToCreate, after) => {
 const solutionObjectTypeId = "2-29995024";
 const associationTypeId = 290;
 
-exports.main = async (event) => {
+exports.main = async (event, callback) => {
   const { API_TOKEN: accessToken } = process.env;
   const client = new hubspot.Client({
     accessToken,
   });
   const existingSolutions = JSON.parse(event.inputFields.existingSolutions);
-  const companyId = event.inputFields.companyId;
+  console.log(existingSolutions);
   const productSkus = event.inputFields.solucoes_do_cliente.split(";");
 
-  let solutionToCompanyAssociationsResponse;
-  //stop;
-  try {
-    solutionToCompanyAssociationsResponse =
-      await client.crm.associations.v4.batchApi.getPage(
-        solutionObjectTypeId,
-        "0-2",
-        {
-          inputs: existingSolutions.map((r) => ({
-            id: r.id,
-          })),
-        }
-      );
-  } catch (error) {
-    throwError(
-      error,
-      "Ocorreu um erro ao buscar as associações entre as soluções existentes e as empresas"
-    );
-  }
-
-  const solutionsNotToCreate = solutionToCompanyAssociationsResponse.results
-    .filter((s) => String(s.to[0].toObjectId) === String(companyId))
-    .filter((s) => !!existingSolutions.find((es) => es.id === s._from.id))
-    .map((s) => existingSolutions.find((es) => es.id === s._from.id))
-    .filter(
-      (s) =>
-        s.properties.status_da_solucao_do_cliente.trim().toLowerCase() !==
-        "inativa"
-    )
-    .map((s) => s.properties.c_digo_do_produto);
+  const solutionsNotToCreate =
+    existingSolutions.map(
+      (solution) => solution.properties.c_digo_do_produto
+    ) || [];
 
   const solutionsToCreate = productSkus.filter(
     (sku) => !solutionsNotToCreate.find((es) => !!es && es === sku)
@@ -130,8 +103,8 @@ exports.main = async (event) => {
   }
 
   if (products.length === 0) {
-    throwMessage(
-      `nenhum produto encontrado com os códigos de SKU: ${solutionsToCreate}`
+    throw new Error(
+      `Nenhum produto encontrado com os códigos de SKU: ${solutionsToCreate}`
     );
   }
 
@@ -148,7 +121,7 @@ exports.main = async (event) => {
         associations: [
           {
             to: {
-              id: companyId,
+              id: event.inputFields.companyId,
             },
             types: [
               {
@@ -174,3 +147,18 @@ exports.main = async (event) => {
   console.log(`${createdSolutions.results.length} soluções criadas`);
   console.log(`erros: ${createdSolutions.errors || 0}`);
 };
+// [FINAL]
+
+exports.main(
+  {
+    inputFields: {
+      existingSolutions:
+        '[{"id":"19484721826","properties":{"c_digo_do_produto":"99104","hs_createdate":"2024-11-08T18:01:23.854Z","hs_lastmodifieddate":"2024-11-08T18:01:25.146Z","hs_object_id":"19484721826","status_da_solucao_do_cliente":"Ativa"}},{"id":"19484721819","properties":{"c_digo_do_produto":"99303","hs_createdate":"2024-11-08T18:01:23.855Z","hs_lastmodifieddate":"2024-11-08T18:01:24.910Z","hs_object_id":"19484721819","status_da_solucao_do_cliente":"Ativa"}},{"id":"19484721825","properties":{"c_digo_do_produto":"99301","hs_createdate":"2024-11-08T18:01:23.855Z","hs_lastmodifieddate":"2024-11-08T18:01:25.146Z","hs_object_id":"19484721825","status_da_solucao_do_cliente":"Ativa"}}]',
+      companyId: "25626344450",
+      solucoes_do_cliente:
+        "99301;99302;99303;99304;99210;99207;99208;99105;99103;99104",
+    },
+    object: { objectId: 13555162237 },
+  },
+  console.log
+);
