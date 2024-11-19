@@ -58,7 +58,7 @@ async function updateParceiroBy(id, data) {
   }
 }
 
-function parceiroPropertiesFormatter(analysisId, data) {
+function parceiroPropertiesFormatter(analysisId, data, documentType) {
   return {
     properties: {
       identificador__id_: analysisId,
@@ -75,7 +75,7 @@ function parceiroPropertiesFormatter(analysisId, data) {
         0
       ),
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
-      produto_risk3: "express_financial",
+      produto_risk3: documentType === "CNPJ" ? "express_light" : "express_pf",
       analise_de_credito:
         data.analise.classificacao === "vermelho" ||
         data.analise.classificacao === "roxo"
@@ -94,14 +94,15 @@ exports.main = async (event, callback) => {
       data: { token },
     } = await loginOnRisk3();
 
-    const { identificador__id_ } = event.inputFields;
+    const { identificador__id_, tipo_documento } = event.inputFields;
 
     const analysisResult = await getAnalysisBy(identificador__id_, token);
 
     if (analysisResult.data.status === "Concluída") {
       const infosToUpdate = parceiroPropertiesFormatter(
         identificador__id_,
-        analysisResult.data
+        analysisResult.data,
+        tipo_documento
       );
 
       await updateParceiroBy(event.object.objectId, infosToUpdate);
@@ -143,6 +144,7 @@ exports.main(
   {
     inputFields: {
       identificador__id_: "ent4991_95111",
+      tipo_documento: "CNPJ",
     },
     object: { objectId: 16222219567 },
   },
