@@ -62,6 +62,9 @@ function parceiroPropertiesFormatter(analysisId, data, documentType) {
   return {
     properties: {
       identificador__id_: analysisId,
+      razao_social: data.empresa.razao_social,
+      endereco: data.empresa.endereco,
+      atividade_principal: data.empresa.atividade_principal,
       data_da_solicitacao: new Date(data.data_da_solicitação).setUTCHours(
         0,
         0,
@@ -104,6 +107,7 @@ exports.main = async (event, callback) => {
         analysisResult.data,
         tipo_documento
       );
+      console.log("infosToUpdate", infosToUpdate);
 
       await updateParceiroBy(event.object.objectId, infosToUpdate);
 
@@ -143,7 +147,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      identificador__id_: "ent4991_95111",
+      identificador__id_: "ent403_63384",
       tipo_documento: "CNPJ",
     },
     object: { objectId: 16222219567 },
