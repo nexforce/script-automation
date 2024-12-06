@@ -68,7 +68,7 @@ async function updateBatchContactsBy(ids) {
         return {
           id,
           properties: {
-            has_multiple_additional_emails: false,
+            has_multiple_additional_emails: true,
           },
         };
       }),
