@@ -22,7 +22,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {},
-    object: { objectId: 13555162237 },
+    object: {},
   },
   console.log
 );
