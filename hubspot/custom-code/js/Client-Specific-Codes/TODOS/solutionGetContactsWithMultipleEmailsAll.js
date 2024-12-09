@@ -28,6 +28,11 @@ async function searchContactsWithAdditionalEmails(
               operator: "GT",
               value: id || 0,
             },
+            {
+              propertyName: "has_multiple_additional_emails",
+              operator: "NEQ",
+              value: true,
+            },
           ],
         },
       ],
@@ -142,15 +147,7 @@ exports.main = async () => {
 
       numberOfReadContacts += contacts.results.length;
 
-      const filteredResults = contacts.results.filter((contact) =>
-        contact.properties.hs_additional_emails.includes(";")
-      );
-
-      filteredContacts.push(...filteredResults);
-      console.log(
-        "Número de contatos filtrados nesta chamada:",
-        filteredResults.length
-      );
+      filteredContacts.push(...contacts.results);
 
       if (contacts.paging?.next?.after >= 10000) {
         console.log(`Atingiu ${contacts.paging?.next?.after} resultados...`);
