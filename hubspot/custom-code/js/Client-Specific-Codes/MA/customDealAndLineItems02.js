@@ -15,6 +15,9 @@ exports.main = async (event, callback) => {
         "name",
         "hs_sku",
         "hs_product_id",
+        "price",
+        "hs_discount_percentage",
+        "b1_cod",
       ],
     });
 

@@ -21,14 +21,16 @@ exports.main = async (event, callback) => {
         email: event.inputFields.contact_email,
         complem: event.inputFields.contact_complemento || "",
         codzho: event.object.objectId,
+        ps_id_origem: String(event.object.objectId),
         pessoa: "F",
         tipo: "F",
         pais: "105",
         conta: "11201001",
         codpais: "01058",
-        // validar
-        nreduz: `${event.inputFields.contact_firstName} ${event.inputFields.contact_lastName}`,
-        inscr: "0",
+        nreduz: `${event.inputFields.contact_firstName}`,
+        inscr: "ISENTO",
+        a1_naturez: "111101",
+        a1_tpj: "4",
       },
       {
         headers: {
@@ -55,6 +57,8 @@ exports.main = async (event, callback) => {
         outputFields: {
           cod: properties.cod,
           loja: properties.loja,
+          msblql: properties.msblql,
+          id: properties.id,
         },
       });
     }
@@ -70,12 +74,27 @@ exports.main = async (event, callback) => {
         console.error(err.message);
 
         throw err;
+      } else if (error.response?.status == 500) {
+        error.response.status = 400;
+        error.status = 400;
+        const typeOfErrorMessage =
+          typeof error.response.data.meta.errors[0].message;
+
+        const errorMessage =
+          typeOfErrorMessage === "string"
+            ? error.response.data.meta.errors[0].message ||
+              "Erro desconhecido no Protheus."
+            : error.response.data.meta.errors[0].message ||
+              "Erro desconhecido no Protheus.";
+
+        console.error(errorMessage);
+
+        throw new Error(errorMessage);
       } else {
         console.error("Erro na chamada axios: ", JSON.stringify(error.message));
         throw error;
       }
     }
-
     console.error(
       `Erro ao criar cliente no Protheus: ${JSON.stringify(error.message)}`
     );

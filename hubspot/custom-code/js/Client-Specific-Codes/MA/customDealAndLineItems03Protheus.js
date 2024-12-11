@@ -1,3 +1,10 @@
+const dotenv = require("dotenv");
+
+// Utiliza o arquivo .env para obter o accessToken (Importante: nunca mandar o accessToken para o repositório!)
+dotenv.config();
+
+// Ao mandar pro custom code do fluxo, copiar a partir desta linha até o comentário [FINAL]
+
 const axios = require("axios").default;
 
 function mapCondPag(condPag) {
@@ -192,38 +199,54 @@ function mapTpFrete(tpFrete) {
   }
 }
 
-exports.main = async (event) => {
-  const protheusToken = event.inputFields["protheus_token"];
+function paymentTypeMapper(paymentType) {
+  const paymentMapper = {
+    Boleto: "BO",
+    "Carteira à vista": "R$",
+    "Cartão de Crédito": "CC",
+    Cheque: "CH",
+    "Depósito em CC": "DC",
+    "Pague Seguro": "PS",
+  };
 
+  return paymentMapper[paymentType];
+}
+
+function operationMapper(operationType) {
+  const operationMapperObj = {
+    "Venda Representada": "R",
+    "Cobrança de Locação": "22",
+    "Remessa para Locação": "18",
+    "Remessa de mercadoria para exposição ou feira": "10",
+    "Remessa bonificação, doação ou brinde": "08",
+    "Venda de Mercadoria": "01",
+    "Remessa em Comodato": "06",
+    "Remessa em Mostruário": "11",
+    "Remessa para Demonstração": "05",
+    "Remessa de Amostra Grátis": "09",
+    "Venda E-Commerce": "29",
+  };
+
+  return operationMapperObj[operationType];
+}
+
+function storageMapper(oper) {
+  const storageTypesMapper = {
+    "05": "03",
+    "06": "03",
+    10: "03",
+    11: "03",
+    29: "05",
+  };
+
+  return storageTypesMapper[oper] || "01";
+}
+
+async function sendDealToProtheus(body, protheusToken) {
   try {
-    const protheusResponse = await axios.post(
-      `${process.env.PROTHEUS_URI}/rest/SalesForce/Pedido`,
-      {
-        filial: event.inputFields.deal_c5_filial,
-        pedcli: event.inputFields.deal_c5_pedcli,
-        tipocli: event.inputFields.deal_c5_tipocli,
-        tipo: event.inputFields.deal_c5_tipo,
-        condpag: mapCondPag(event.inputFields.deal_c5_condpag),
-        forpg: event.inputFields.deal_c5_forpg,
-        obsexpe: event.inputFields.deal_c5_obsexpe,
-        obsnfse: event.inputFields.deal_c5_obsnfse,
-        vend1: event.inputFields.deal_c5_vend1,
-        tpfrete: mapTpFrete(event.inputFields.deal_c5_tpfrete),
-        frete: event.inputFields.deal_c5_frete,
-        ztplibe: event.inputFields.deal_c5_ztplibe,
-        codzho: event.object.objectId,
-        oper: event.inputFields.deal_c6_oper,
-        entreg: event.inputFields.deal_c6_entreg,
-        licita: event.inputFields.deal_licitacao,
-        itens: JSON.parse(event.inputFields.lineItems).map((lineItem) => ({
-          item: "01", // TODO
-          produto: lineItem.properties.hs_sku,
-          qtdven: lineItem.properties.quantity,
-          tes: "50E", // TODO
-          entreg: event.inputFields.deal_c6_entreg,
-          prunit: Number.parseFloat(lineItem.properties.amount),
-        })),
-      },
+    const response = await axios.post(
+      `${process.env.PROTHEUS_URI}/SalesForce/Pedido`,
+      body,
       {
         headers: {
           Authorization: `Bearer ${protheusToken}`,
@@ -231,11 +254,112 @@ exports.main = async (event) => {
       }
     );
 
-    if (!protheusResponse.data.meta.sucess) {
-      throw `Erro ao criar pedido no Protheus: ${protheusResponse.data.meta.errors}`;
-    }
+    return response.data;
   } catch (error) {
-    console.error(`Erro ao criar pedido no Protheus: ${JSON.stringify(error)}`);
+    if (error instanceof axios.AxiosError) {
+      if (error.code === "ETIMEDOUT") {
+        const err = {
+          message: `IP não liberado no Protheus: ${JSON.stringify(
+            (await axios.get("https://myip.wtf/json")).data
+          )}`,
+        };
+
+        throw err;
+      } else if (error.response?.status == 500) {
+        error.response.status = 400;
+        error.status = 400;
+        const errorMessage =
+          error.response.data.meta.errors[0].message[0] ||
+          "Erro desconhecido no Protheus.";
+
+        console.error(errorMessage);
+
+        throw new Error(errorMessage);
+      } else {
+        console.error("Erro na chamada axios: ", JSON.stringify(error.message));
+        throw error;
+      }
+    }
+
+    console.error(
+      `Erro ao criar cliente no Protheus: ${JSON.stringify(error.message)}`
+    );
+
     throw error;
   }
+}
+
+exports.main = async (event, callback) => {
+  const { protheusToken } = event.inputFields;
+  const date = new Date(+event.inputFields.c6_entreg)
+    .toISOString()
+    .replaceAll("-", "");
+  const indexOfT = date.indexOf("T");
+  const dateFormatted = date.slice(0, indexOfT);
+
+  const body = {
+    filial: event.inputFields.c5_filial,
+    pedcli: event.inputFields.c5_pedcli,
+    tipo: event.inputFields.c5_tipo,
+    condpag: mapCondPag(event.inputFields.c5_condpag),
+    forpg: paymentTypeMapper(event.inputFields.c5_forpg),
+    obsexpe: event.inputFields.c5_obsexpe,
+    obsnfse: event.inputFields.c5_obsnfse,
+    vend1: event.inputFields.c5_vend1,
+    tpfrete: mapTpFrete(event.inputFields.c5_tpfrete),
+    frete: Number.parseFloat(event.inputFields.c5_frete),
+    ztplibe: event.inputFields.c5_ztplibe === "Não" ? "2" : "1",
+    codzho: String(event.object.objectId),
+    ps_id_origem: String(event.object.objectId),
+    // licita: event.inputFields.licitacao, -> validar valores (1=PUBLICO;2=PRIVADO;3=BIONEXO;4=OUTROS)
+    c5_lojacli: event.inputFields.c5_lojacli,
+    c5_cliente: event.inputFields.c5_cliente,
+    c5_zidcont: event.inputFields.id_contrato || "",
+    itens: JSON.parse(event.inputFields.lineItems).map((lineItem) => ({
+      produto: lineItem.properties.hs_sku,
+      qtdven: +lineItem.properties.quantity,
+      oper: operationMapper(event.inputFields.c6_oper),
+      c6_local: storageMapper(operationMapper(event.inputFields.c6_oper)),
+      entreg: dateFormatted,
+      prunit: Number.parseFloat(lineItem.properties.price),
+      prcven: lineItem.properties.hs_discount_percentage
+        ? Number.parseFloat(lineItem.properties.price) *
+          (1 -
+            Number.parseFloat(lineItem.properties.hs_discount_percentage) / 100)
+        : Number.parseFloat(lineItem.properties.price),
+    })),
+  };
+
+  //console.log(body);
+  //stop;
+
+  try {
+    const protheusResponse = await sendDealToProtheus(body, protheusToken);
+    console.log("protheusResponse", protheusResponse);
+
+    const properties = protheusResponse.data.objects[0];
+    return await callback({
+      outputFields: {
+        c5_num: properties.num,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    console.error(err.message);
+    // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
+    if (axios.isAxiosError(err) && JSON.stringify(err).includes("cloudflare"))
+      err.response.status = 500;
+    // We will automatically retry when the code fails because of a rate limiting error from the HubSpot API.
+    throw err;
+  }
 };
+
+// [FINAL];
+
+exports.main(
+  {
+    inputFields: {},
+    object: { objectId: "" },
+  },
+  console.log
+);
