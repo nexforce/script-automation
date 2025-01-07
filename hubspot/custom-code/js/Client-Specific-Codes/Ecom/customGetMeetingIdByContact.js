@@ -44,7 +44,6 @@ exports.main = async (event, callback) => {
 
     return await callback({
       outputFields: {
-        hs_execution_state: "SUCCESS",
         meetingId,
       },
     });
