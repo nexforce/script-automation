@@ -50,7 +50,9 @@ exports.main = async (event, callback) => {
     console.log(message);
     return await callback({
       outputFields: {
-        message,
+        dealId: fromObjectId,
+        meetingId: toObjectId,
+        associationComplete: !!toObjectId,
       },
     });
   } catch (err) {
