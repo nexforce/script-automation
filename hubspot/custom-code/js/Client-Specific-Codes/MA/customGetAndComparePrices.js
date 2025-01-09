@@ -102,7 +102,9 @@ async function getProductsInfos(productsIds) {
 
 exports.main = async (event, callback) => {
   try {
-    const { lineItemsIds, currency } = event.inputFields;
+    const { lineItemsIds, hs_currency } = event.inputFields;
+
+    console.log("Currency: ", hs_currency);
 
     const currencyMapper = {
       USD: "hs_price_usd",
@@ -123,22 +125,8 @@ exports.main = async (event, callback) => {
       };
     });
 
-    console.log("Line items to compare: ", lineItemsPricesToCompare);
-
     const { results: productsInformations } = await getProductsInfos(
       lineItemsPricesToCompare.map((item) => item.productId)
-    );
-
-    console.log(
-      "Products to compare: ",
-      productsInformations.map((product) => {
-        const {
-          id,
-          properties: { createdate, hs_lastmodifieddate, price, ...rest },
-        } = product;
-
-        return rest;
-      })
     );
 
     if (lineItemsPricesToCompare.length !== productsInformations.length) {
@@ -154,26 +142,35 @@ exports.main = async (event, callback) => {
         if (element.productId == product.id) {
           pricesMatcher.push({
             isPriceModified:
-              parseFloat(product.properties[currencyMapper[currency]]) >
+              parseFloat(product.properties[currencyMapper[hs_currency]]) >
               element.lineItemPrice,
             sku: element.sku,
+            originalPrice: product.properties[currencyMapper[hs_currency]],
+            modifiedPrice: element.lineItemPrice,
+            diff:
+              element.lineItemPrice /
+              parseFloat(product.properties[currencyMapper[hs_currency]]),
           });
         }
       });
     });
 
-    const isValidPrice = pricesMatcher.some(
+    const isValidPrice = !pricesMatcher.some(
       (price) => price.isPriceModified === true
     );
+
+    const message = !isValidPrice
+      ? `Os itens modificados foram:${pricesMatcher.map((price) => {
+          return ` ${price.sku} de ${price.originalPrice} para ${
+            price.modifiedPrice
+          } tendo uma diferença de ${price.diff.toFixed(1)}%`;
+        })}.`
+      : "";
 
     return await callback({
       outputFields: {
         isValidPrice,
-        modifiedItems: isValidPrice
-          ? JSON.stringify(
-              pricesMatcher.filter((price) => price.isPriceModified === true)
-            )
-          : [],
+        modifiedItems: message,
       },
     });
   } catch (err) {
@@ -192,10 +189,11 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      lineItemsIds: "[26135249582,26141482541,26141482555,26141482603]",
-      currency: "EUR",
+      lineItemsIds:
+        "[26336782960,26336782961,26336782962,26336782963,26336782964]",
+      hs_currency: "BRL",
     },
-    object: { objectId: "13257321527" },
+    object: { objectId: "" },
   },
   console.log
 );
