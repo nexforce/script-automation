@@ -148,8 +148,10 @@ exports.main = async (event, callback) => {
             originalPrice: product.properties[currencyMapper[hs_currency]],
             modifiedPrice: element.lineItemPrice,
             diff:
-              element.lineItemPrice /
-              parseFloat(product.properties[currencyMapper[hs_currency]]),
+              (1 -
+                element.lineItemPrice /
+                  parseFloat(product.properties[currencyMapper[hs_currency]])) *
+              100,
           });
         }
       });
@@ -160,11 +162,15 @@ exports.main = async (event, callback) => {
     );
 
     const message = !isValidPrice
-      ? `Os itens modificados foram:${pricesMatcher.map((price) => {
-          return ` ${price.sku} de ${price.originalPrice} para ${
-            price.modifiedPrice
-          } tendo uma diferença de ${price.diff.toFixed(1)}%`;
-        })}.`
+      ? `Os itens modificados foram:${pricesMatcher
+          .filter((price) => price.isPriceModified === true)
+          .map((price) => {
+            if (price.isPriceModified) {
+              return ` ${price.sku} de ${price.originalPrice} para ${
+                price.modifiedPrice
+              } tendo uma diferença de ${price.diff.toFixed(1)}%`;
+            }
+          })}.`
       : "";
 
     return await callback({
