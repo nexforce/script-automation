@@ -125,22 +125,8 @@ exports.main = async (event, callback) => {
       };
     });
 
-    console.log("Line items to compare: ", lineItemsPricesToCompare);
-
     const { results: productsInformations } = await getProductsInfos(
       lineItemsPricesToCompare.map((item) => item.productId)
-    );
-
-    console.log(
-      "Products to compare: ",
-      productsInformations.map((product) => {
-        const {
-          id,
-          properties: { createdate, hs_lastmodifieddate, price, ...rest },
-        } = product;
-
-        return rest;
-      })
     );
 
     if (lineItemsPricesToCompare.length !== productsInformations.length) {
@@ -168,8 +154,6 @@ exports.main = async (event, callback) => {
         }
       });
     });
-
-    console.log(pricesMatcher);
 
     const isValidPrice = !pricesMatcher.some(
       (price) => price.isPriceModified === true
