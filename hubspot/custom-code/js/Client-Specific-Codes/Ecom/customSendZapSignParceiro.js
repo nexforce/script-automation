@@ -19,6 +19,32 @@ function addSevenDaysToDate(dateString) {
   return `${year}-${month}-${day}`;
 }
 
+function formatDocumentBy(type, document) {
+  const cleanedDocument = document.toString().replace(/\D/g, "");
+
+  if (type === "CPF") {
+    if (cleanedDocument.length !== 11) {
+      throw new Error("Invalid CPF. Must have 11 digits.");
+    }
+
+    return cleanedDocument.replace(
+      /(\d{3})(\d{3})(\d{3})(\d{2})/,
+      "$1.$2.$3-$4"
+    );
+  } else if (type === "CNPJ") {
+    if (cleanedDocument.length !== 14) {
+      throw new Error("Invalid CNPJ. Must have 14 digits.");
+    }
+
+    return cleanedDocument.replace(
+      /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+      "$1.$2.$3/$4-$5"
+    );
+  } else {
+    throw new Error("Invalid type. Only 'CPF' or 'CNPJ' are supported.");
+  }
+}
+
 async function sendZapSignDocument(body) {
   try {
     const headers = {
@@ -61,12 +87,16 @@ exports.main = async (event, callback) => {
       "0"
     )}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 
+    const signerName = contactLastName
+      ? `${contactFirstName} ${contactLastName}`
+      : contactFirstName;
+
     const body = {
       template_id:
         tipo_documento == "CNPJ"
           ? "772905c4-72b0-46ae-9de6-db4783d1e372"
           : "e31d54d8-ae64-4d42-8ca2-7b7196c4298c",
-      signer_name: contactFirstName + contactLastName,
+      signer_name: signerName,
       signer_email: contactEmail,
       send_automatic_email: true,
       send_automatic_whatsapp: false,
@@ -86,7 +116,7 @@ exports.main = async (event, callback) => {
         },
         {
           de: "{{CNPJ}}",
-          para: cnpj,
+          para: formatDocumentBy(tipo_documento, cnpj),
         },
         {
           de: "{{ENDERECO_COMPLETO}}",
@@ -102,11 +132,11 @@ exports.main = async (event, callback) => {
         },
         {
           de: "{{NOME_REPRESENTANTE_LEGAL}}",
-          para: contactFirstName,
+          para: signerName,
         },
         {
           de: "{{CPF}}",
-          para: contactCpf,
+          para: formatDocumentBy("CPF", contactCpf),
         },
         {
           de: "{{DATA_ENVIO_TERMO_ADESAO}}",
@@ -114,7 +144,7 @@ exports.main = async (event, callback) => {
         },
         {
           de: "{{NOME_PESSOA_FISICA}}",
-          para: contactFirstName,
+          para: signerName,
         },
       ],
     };
@@ -127,6 +157,8 @@ exports.main = async (event, callback) => {
         hs_execution_state: "SUCCESS",
         documentUrl: document.original_file,
         signUrl: document.signers[0].sign_url,
+        token: document.token,
+        url: `https://app.zapsign.com.br/conta/documentos/${document.token}`,
       },
     });
   } catch (err) {
@@ -149,14 +181,14 @@ exports.main(
     inputFields: {
       id_do_parceiro: "16222219567",
       razao_social: "",
-      cnpj: "",
+      cnpj: "88.056.286/0001-78",
       endereco: "",
       data_de_envio_do_termo_de_adesao: 1732147200000,
-      tipo_documento: "CPF",
+      tipo_documento: "CNPJ",
       contactEmail: "properties.email",
-      contactFirstName: "properties.firstname",
-      contactLastName: "properties.lastname",
-      contactCpf: "properties.cpf",
+      contactFirstName: "Luiz Felipe",
+      contactLastName: "Dias",
+      contactCpf: "807.218.340-00",
       contactPhone: "properties.phone",
       ownerEmail: "",
     },
