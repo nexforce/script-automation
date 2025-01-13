@@ -77,6 +77,7 @@ async function getProductsInfos(productsIds) {
       ],
       properties: [
         "hs_sku",
+        "name",
         "price",
         "hs_price_brl",
         "hs_price_eur",
@@ -122,6 +123,7 @@ exports.main = async (event, callback) => {
         productId: info.properties.hs_product_id,
         sku: info.properties.hs_sku,
         lineItemPrice: parseFloat(info.properties.price),
+        name: info.properties.name,
       };
     });
 
@@ -145,6 +147,7 @@ exports.main = async (event, callback) => {
               parseFloat(product.properties[currencyMapper[hs_currency]]) >
               element.lineItemPrice,
             sku: element.sku,
+            name: element.name,
             originalPrice: product.properties[currencyMapper[hs_currency]],
             modifiedPrice: element.lineItemPrice,
             diff:
@@ -166,9 +169,9 @@ exports.main = async (event, callback) => {
           .filter((price) => price.isPriceModified === true)
           .map((price) => {
             if (price.isPriceModified) {
-              return ` ${price.sku} de ${price.originalPrice} para ${
+              return ` ${price.name} de ${price.originalPrice} para ${
                 price.modifiedPrice
-              } tendo uma diferença de ${price.diff.toFixed(1)}%`;
+              } tendo uma diferença de ${price.diff.toFixed(2)}%`;
             }
           })}.`
       : "";
