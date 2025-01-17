@@ -58,6 +58,10 @@ async function updateParceiroBy(id, data) {
   }
 }
 
+function formatDate(date) {
+  return new Date(date).setUTCHours(0, 0, 0, 0);
+}
+
 function parceiroPropertiesFormatter(analysisId, data, documentType) {
   return {
     properties: {
@@ -65,18 +69,8 @@ function parceiroPropertiesFormatter(analysisId, data, documentType) {
       razao_social: data.empresa.razao_social,
       endereco: data.empresa.endereco,
       atividade_principal: data.empresa.atividade_principal,
-      data_da_solicitacao: new Date(data.data_da_solicitação).setUTCHours(
-        0,
-        0,
-        0,
-        0
-      ),
-      data_da_finalizacao: new Date(data.data_da_finalização).setUTCHours(
-        0,
-        0,
-        0,
-        0
-      ),
+      data_da_solicitacao: formatDate(data.data_da_solicitação),
+      data_da_finalizacao: formatDate(data.data_da_finalização),
       data_de_validade: new Date(data.data_de_validade).setUTCHours(0, 0, 0, 0),
       produto_risk3: documentType === "CNPJ" ? "express_light" : "express_pf",
       analise_de_credito:
@@ -87,6 +81,28 @@ function parceiroPropertiesFormatter(analysisId, data, documentType) {
       alerta_de_restricao: data.analise.resultado_da_analise.alerta,
       score: data.analise.calculos.score_final.toFixed(2),
       score_alerta_de_restricao: data.analise.calculos.fator_de_alerta,
+      cnpj: data.empresa.cnpj,
+      ramo_da_atividade: data.empresa.ramo_da_atividade,
+      codigo_cnae: data.empresa.codigo_cnae,
+      tipo_empresa: data.empresa.tipo_de_empresa,
+      nome_fantasia: data.empresa.nome_fantasia,
+      data_da_fundacao: data.empresa.data_da_fundacao
+        ? formatDate(
+            data.empresa.data_da_fundacao.split("/").reverse().join("-")
+          )
+        : "",
+      natureza: data.empresa.natureza_juridica
+        .replace("(", "")
+        .replace(")", ""),
+      codigo_natureza: data.empresa.codigo_natureza_juridica,
+      setor_econonimo: data.empresa.setor_economico,
+      situacao_cadastral: data.empresa.situacao_cadastral_cnpj,
+      situacao_especial: data.empresa.situacao_especial_cnpj,
+      inscricao_estadual: data.empresa.inscricao_estadual,
+      numero_de_filiais: data.empresa.numero_de_filiais,
+      numero_de_funcionarios: data.empresa.numero_de_funcionarios,
+      telefone_da_empresa: data.empresa.telefone_da_empresa,
+      email_da_empresa: data.empresa.email_da_empresa,
     },
   };
 }
@@ -147,7 +163,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      identificador__id_: "ent403_63384",
+      identificador__id_: "ent4991_95111",
       tipo_documento: "CNPJ",
     },
     object: { objectId: 16222219567 },
