@@ -7,7 +7,7 @@ dotenv.config();
 
 exports.main = async (event, callback) => {
   try {
-    const blockedDays = [0, 7];
+    const blockedDays = [0, 6];
 
     const weekDay = new Date().getDay();
     const hours = new Date().getHours();
