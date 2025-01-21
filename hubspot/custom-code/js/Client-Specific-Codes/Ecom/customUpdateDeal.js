@@ -44,7 +44,7 @@ exports.main = async (event, callback) => {
 
     return await callback({
       outputFields: {
-        parceiroId: updatedDeal.id,
+        dealId: updatedDeal.id,
       },
     });
   } catch (err) {
