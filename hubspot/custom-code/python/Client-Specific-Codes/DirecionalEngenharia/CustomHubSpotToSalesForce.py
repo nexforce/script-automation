@@ -215,11 +215,15 @@ def fetch_hubspot_deals():
         ],
         "limit": 100
         }
+        if after:
+            payload["after"] = after
+
         response = requests.post(hubspot_url, json=payload, headers=headers)
         data = response.json()
         deals.extend(data.get('results', []))
-        has_more = data.get('paging', {}).get('next', {}).get('after') is not None
+        
         after = data.get('paging', {}).get('next', {}).get('after')
+        has_more = after is not None
 
     return deals
 

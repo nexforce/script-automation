@@ -51,7 +51,7 @@ def main(event):
     sf_query_url = (
         f"{SF_INSTANCE_URL}/services/data/{SF_API_VERSION}/query/?q="
         "SELECT+Ano_da_Venda__c,Atendente_GA__c,CloseDate,Contato_imobiliaria__c,DataOportunidade__c,"
-        "Owner.Name,Owner.Email,"
+        "Owner.Name,Owner.Email,IdHubspot__c,amount,"
         "DataVenda__c,Diretor_de_vendas__c,Email_Principal__c,Gerente_de_vendas__c,"
         "Gerente_regional__c,Id,IDOportunidade__c,Imobiliaria__c,LeadSource,Nome_imob__c,"
         "NumeroVenda__c,Observa_o__c,Observacoes_SDR__c,ObservacoesGA__c,Produto__c,"
