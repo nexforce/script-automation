@@ -86,11 +86,11 @@ function waitFor(seconds) {
   });
 }
 
-const solutionObjectTypeId = "2-29995024";
+const solutionObjectTypeId = "2-27581922";
 
 exports.main = async (event, callback) => {
   const { API_TOKEN: accessToken } = process.env;
-  const companyName = event.inputFields.nomeEmpresa;
+  const cnpj = event.inputFields.cnpj;
   const sdc = event.inputFields.solucoes_do_cliente;
   const client = new hubspot.Client({
     accessToken,
@@ -99,15 +99,15 @@ exports.main = async (event, callback) => {
   try {
     const searchCompaniesResponse =
       await client.crm.companies.searchApi.doSearch({
-        ...propertyEquals("name", companyName),
+        ...propertyEquals("cnpj", cnpj),
         properties: ["hs_object_id"],
       });
 
     if (searchCompaniesResponse.results.length === 0) {
-      throwMessage(`empresa com nome "${companyName}" não encontrada`);
+      throwMessage(`empresa com cnpj "${cnpj}" não encontrada`);
     } else if (searchCompaniesResponse.results.length > 1) {
       console.warn(
-        `encontrada mais de uma empresa com o nome "${companyName}"; a primeira ocorrência será utilizada`
+        `encontrada mais de uma empresa com o cnpj "${cnpj}"; a primeira ocorrência será utilizada`
       );
     }
     const companyId =
@@ -197,6 +197,7 @@ exports.main = async (event, callback) => {
     });
   } catch (error) {
     console.error(stringifyOrExtractError(error));
+    throw error;
   }
 };
 

@@ -43,8 +43,8 @@ const searchProductsRequestBody = (solutionsToCreate, after) => {
   return body;
 };
 
-const solutionObjectTypeId = "2-29995024";
-const associationTypeId = 290;
+const solutionObjectTypeId = "2-27581922";
+const associationTypeId = 297;
 
 exports.main = async (event, callback) => {
   const { API_TOKEN: accessToken } = process.env;
@@ -121,7 +121,7 @@ exports.main = async (event, callback) => {
         associations: [
           {
             to: {
-              id: event.inputFields.companyId,
+              id: event.inputFields.companyId || event.object.objectId,
             },
             types: [
               {
@@ -147,6 +147,7 @@ exports.main = async (event, callback) => {
   console.log(`${createdSolutions.results.length} soluções criadas`);
   console.log(`erros: ${createdSolutions.errors || 0}`);
 };
+
 // [FINAL]
 
 exports.main(
