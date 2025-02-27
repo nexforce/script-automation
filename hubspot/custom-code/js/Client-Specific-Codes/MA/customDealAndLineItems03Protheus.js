@@ -184,7 +184,7 @@ function mapCondPag(condPag) {
     case "60/75/90 DIAS":
       return "251";
     default:
-      throw `Condição de pagamento não mapeada: ${condPag}`;
+      throw new Error(`Condição de pagamento não mapeada: ${condPag}`);
   }
 }
 
@@ -195,7 +195,7 @@ function mapTpFrete(tpFrete) {
     case "FOB":
       return "F";
     default:
-      throw `Tipo de frete não mapeado: ${tpFrete}`;
+      throw new Error(`Tipo de frete não mapeado: ${tpFrete}`);
   }
 }
 
@@ -282,7 +282,7 @@ async function sendDealToProtheus(body, protheusToken) {
     }
 
     console.error(
-      `Erro ao criar cliente no Protheus: ${JSON.stringify(error.message)}`
+      `Erro ao criar pedido no Protheus: ${JSON.stringify(error.message)}`
     );
 
     throw error;
@@ -290,50 +290,51 @@ async function sendDealToProtheus(body, protheusToken) {
 }
 
 exports.main = async (event, callback) => {
-  const { protheusToken } = event.inputFields;
-  const date = new Date(+event.inputFields.c6_entreg)
-    .toISOString()
-    .replaceAll("-", "");
-  const indexOfT = date.indexOf("T");
-  const dateFormatted = date.slice(0, indexOfT);
-
-  const body = {
-    filial: event.inputFields.c5_filial,
-    pedcli: event.inputFields.c5_pedcli,
-    tipo: event.inputFields.c5_tipo,
-    condpag: mapCondPag(event.inputFields.c5_condpag),
-    forpg: paymentTypeMapper(event.inputFields.c5_forpg),
-    obsexpe: event.inputFields.c5_obsexpe,
-    obsnfse: event.inputFields.c5_obsnfse,
-    vend1: event.inputFields.c5_vend1,
-    tpfrete: mapTpFrete(event.inputFields.c5_tpfrete),
-    frete: Number.parseFloat(event.inputFields.c5_frete),
-    ztplibe: event.inputFields.c5_ztplibe === "Não" ? "2" : "1",
-    codzho: String(event.object.objectId),
-    ps_id_origem: String(event.object.objectId),
-    // licita: event.inputFields.licitacao, -> validar valores (1=PUBLICO;2=PRIVADO;3=BIONEXO;4=OUTROS)
-    c5_lojacli: event.inputFields.c5_lojacli,
-    c5_cliente: event.inputFields.c5_cliente,
-    c5_zidcont: event.inputFields.id_contrato || "",
-    itens: JSON.parse(event.inputFields.lineItems).map((lineItem) => ({
-      produto: lineItem.properties.hs_sku,
-      qtdven: +lineItem.properties.quantity,
-      oper: operationMapper(event.inputFields.c6_oper),
-      c6_local: storageMapper(operationMapper(event.inputFields.c6_oper)),
-      entreg: dateFormatted,
-      prunit: Number.parseFloat(lineItem.properties.price),
-      prcven: lineItem.properties.hs_discount_percentage
-        ? Number.parseFloat(lineItem.properties.price) *
-          (1 -
-            Number.parseFloat(lineItem.properties.hs_discount_percentage) / 100)
-        : Number.parseFloat(lineItem.properties.price),
-    })),
-  };
-
-  //console.log(body);
-  //stop;
-
   try {
+    const { protheusToken } = event.inputFields;
+    const date = new Date(+event.inputFields.c6_entreg)
+      .toISOString()
+      .replaceAll("-", "");
+    const indexOfT = date.indexOf("T");
+    const dateFormatted = date.slice(0, indexOfT);
+
+    const body = {
+      filial: event.inputFields.c5_filial,
+      pedcli: event.inputFields.c5_pedcli,
+      tipo: event.inputFields.c5_tipo,
+      condpag: mapCondPag(event.inputFields.c5_condpag),
+      forpg: paymentTypeMapper(event.inputFields.c5_forpg),
+      obsexpe: event.inputFields.c5_obsexpe,
+      obsnfse: event.inputFields.c5_obsnfse,
+      vend1: event.inputFields.c5_vend1,
+      tpfrete: mapTpFrete(event.inputFields.c5_tpfrete),
+      frete: Number.parseFloat(event.inputFields.c5_frete),
+      ztplibe: event.inputFields.c5_ztplibe === "Não" ? "2" : "1",
+      codzho: String(event.object.objectId),
+      ps_id_origem: String(event.object.objectId),
+      // licita: event.inputFields.licitacao, -> validar valores (1=PUBLICO;2=PRIVADO;3=BIONEXO;4=OUTROS)
+      c5_lojacli: event.inputFields.c5_lojacli,
+      c5_cliente: event.inputFields.c5_cliente,
+      c5_zidcont: event.inputFields.id_contrato || "",
+      itens: JSON.parse(event.inputFields.lineItems).map((lineItem) => ({
+        produto: lineItem.properties.hs_sku,
+        qtdven: +lineItem.properties.quantity,
+        oper: operationMapper(event.inputFields.c6_oper),
+        c6_local: storageMapper(operationMapper(event.inputFields.c6_oper)),
+        entreg: dateFormatted,
+        prunit: Number.parseFloat(lineItem.properties.price),
+        prcven: lineItem.properties.hs_discount_percentage
+          ? Number.parseFloat(lineItem.properties.price) *
+            (1 -
+              Number.parseFloat(lineItem.properties.hs_discount_percentage) /
+                100)
+          : Number.parseFloat(lineItem.properties.price),
+      })),
+    };
+
+    //console.log(body);
+    //stop;
+
     const protheusResponse = await sendDealToProtheus(body, protheusToken);
     console.log("protheusResponse", protheusResponse);
 
@@ -345,12 +346,12 @@ exports.main = async (event, callback) => {
     });
   } catch (err) {
     console.error(err);
-    console.error(err.message);
-    // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
-    if (axios.isAxiosError(err) && JSON.stringify(err).includes("cloudflare"))
-      err.response.status = 500;
-    // We will automatically retry when the code fails because of a rate limiting error from the HubSpot API.
-    throw err;
+    console.error("err", err.message);
+    return await callback({
+      outputFields: {
+        errorMessage: err.message,
+      },
+    });
   }
 };
 
@@ -358,7 +359,27 @@ exports.main = async (event, callback) => {
 
 exports.main(
   {
-    inputFields: {},
+    inputFields: {
+      protheusToken: "teste",
+      c6_entreg: "1711929600000",
+      c5_filial: "FILIAL001",
+      c5_pedcli: "123456",
+      c5_tipo: "VENDA",
+      c5_condpag: "07 dias",
+      c5_forpg: "Boleto",
+      c5_obsexpe: "Observação de expedição",
+      c5_obsnfse: "Observação de NFSe",
+      c5_vend1: "Vendedor001",
+      c5_tpfrete: "CIF",
+      c5_frete: "100.50",
+      c5_ztplibe: "Sim",
+      c5_lojacli: "001",
+      c5_cliente: "CLIENTE001",
+      id_contrato: "CONTRATO123",
+      c6_oper: "OPER001",
+      lineItems:
+        '[{"properties": {"hs_sku": "PROD001", "quantity": "10", "price": "50.00", "hs_discount_percentage": "10"}}]',
+    },
     object: { objectId: "" },
   },
   console.log
