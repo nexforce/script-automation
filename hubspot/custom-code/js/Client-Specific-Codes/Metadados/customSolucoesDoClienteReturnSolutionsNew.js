@@ -33,6 +33,15 @@ const propertyEquals = (propertyName, value) => ({
           operator: "EQ",
           value,
         },
+        {
+          propertyName: "id_da_conta",
+          operator: "HAS_PROPERTY",
+        },
+        {
+          propertyName: "lifecyclestage",
+          operator: "IN",
+          values: [67972101, "customer"],
+        },
       ],
     },
   ],
