@@ -2,42 +2,47 @@ const axios = require("axios").default;
 
 axios.defaults.baseURL = process.env.PROTHEUS_URI;
 
+const axios = require("axios").default;
+
+axios.defaults.baseURL = process.env.PROTHEUS_URI;
+
 exports.main = async (event, callback) => {
   try {
     const protheusToken = event.inputFields["protheusToken"];
 
-    const protheusResponse = await axios.post(
-      "/SalesForce/Cliente",
-      {
-        cgc: event.inputFields.contact_cpf,
-        nome: `${event.inputFields.contact_firstName} ${event.inputFields.contact_lastName}`,
-        end: event.inputFields.contact_address,
-        bairro: event.inputFields.contact_bairro,
-        est: event.inputFields.contact_estado,
-        cep: event.inputFields.contact_zip,
-        cod_mun: event.inputFields.contact_codigoDoMunicipio,
-        mun: event.inputFields.contact_municipio,
-        tel: event.inputFields.contact_phone,
-        email: event.inputFields.contact_email,
-        complem: event.inputFields.contact_complemento || "",
-        codzho: event.object.objectId,
-        ps_id_origem: String(event.object.objectId),
-        pessoa: "F",
-        tipo: "F",
-        pais: "105",
-        conta: "11201001",
-        codpais: "01058",
-        nreduz: `${event.inputFields.contact_firstName}`,
-        inscr: "ISENTO",
-        a1_naturez: "111101",
-        a1_tpj: "4",
+    const body = {
+      cgc: event.inputFields.contact_cpf,
+      nome: `${event.inputFields.contact_firstName} ${event.inputFields.contact_lastName}`,
+      nreduz: `${event.inputFields.contact_firstName}`,
+      end: event.inputFields.contact_address,
+      bairro: event.inputFields.contact_bairro,
+      est: event.inputFields.contact_estado,
+      cep: event.inputFields.contact_zip,
+      cod_mun: event.inputFields.contact_codigoDoMunicipio,
+      mun: event.inputFields.contact_municipio,
+      tel: event.inputFields.contact_phone,
+      email: event.inputFields.contact_email,
+      complem: event.inputFields.contact_complemento || "",
+      codzho: event.object.objectId,
+      ps_id_origem: event.object.objectId,
+      pessoa: "F",
+      tipo: "F",
+      pais: "105",
+      conta: "11201001",
+      codpais: "01058",
+      inscr: "ISENTO",
+      a1_naturez: "111101",
+      a1_tpj: "4",
+    };
+
+    console.log("Body: ", body);
+    // stop;
+
+    const protheusResponse = await axios.post("/SalesForce/Cliente", body, {
+      headers: {
+        Authorization: `Bearer ${protheusToken}`,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${protheusToken}`,
-        },
-      }
-    );
+    });
 
     if (!protheusResponse.data.meta.sucess) {
       const protheusErrors = protheusResponse.data.meta.errors;
@@ -63,6 +68,7 @@ exports.main = async (event, callback) => {
       });
     }
   } catch (error) {
+    let errorMessage;
     if (error instanceof axios.AxiosError) {
       if (error.code === "ETIMEDOUT") {
         const err = {
@@ -73,14 +79,14 @@ exports.main = async (event, callback) => {
 
         console.error(err.message);
 
-        throw err;
+        errorMessage = error.message;
       } else if (error.response?.status == 500) {
         error.response.status = 400;
         error.status = 400;
         const typeOfErrorMessage =
           typeof error.response.data.meta.errors[0].message;
 
-        const errorMessage =
+        errorMessage =
           typeOfErrorMessage === "string"
             ? error.response.data.meta.errors[0].message ||
               "Erro desconhecido no Protheus."
@@ -88,17 +94,19 @@ exports.main = async (event, callback) => {
               "Erro desconhecido no Protheus.";
 
         console.error(errorMessage);
-
-        throw new Error(errorMessage);
       } else {
         console.error("Erro na chamada axios: ", JSON.stringify(error.message));
-        throw error;
+        errorMessage = error.message;
       }
     }
     console.error(
       `Erro ao criar cliente no Protheus: ${JSON.stringify(error.message)}`
     );
 
-    throw error;
+    await callback({
+      outputFields: {
+        errorMessage,
+      },
+    });
   }
 };
