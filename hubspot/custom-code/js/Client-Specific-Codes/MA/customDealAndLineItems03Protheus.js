@@ -109,7 +109,7 @@ function mapCondPag(condPag) {
       return "114";
     case "45/60/75 D":
       return "121";
-    case "8X 30DIAS":
+    case "8X 30 DIAS":
       return "135";
     case "ENTR 10 + 30/60D":
       return "145";
@@ -225,6 +225,7 @@ function operationMapper(operationType) {
     "Remessa para Demonstração": "05",
     "Remessa de Amostra Grátis": "09",
     "Venda E-Commerce": "29",
+    "Trade in Usados": "30",
   };
 
   return operationMapperObj[operationType];
@@ -237,6 +238,7 @@ function storageMapper(oper) {
     10: "03",
     11: "03",
     29: "05",
+    30: "90",
   };
 
   return storageTypesMapper[oper] || "01";
@@ -269,7 +271,7 @@ async function sendDealToProtheus(body, protheusToken) {
         error.response.status = 400;
         error.status = 400;
         const errorMessage =
-          error.response.data.meta.errors[0].message[0] ||
+          error.response.data?.meta?.errors[0].message[0] ||
           "Erro desconhecido no Protheus.";
 
         console.error(errorMessage);
@@ -300,7 +302,7 @@ exports.main = async (event, callback) => {
 
     const body = {
       filial: event.inputFields.c5_filial,
-      pedcli: event.inputFields.c5_pedcli,
+      pedcli: event.inputFields.id_oc_cliente,
       tipo: event.inputFields.c5_tipo,
       condpag: mapCondPag(event.inputFields.c5_condpag),
       forpg: paymentTypeMapper(event.inputFields.c5_forpg),
@@ -316,6 +318,7 @@ exports.main = async (event, callback) => {
       c5_lojacli: event.inputFields.c5_lojacli,
       c5_cliente: event.inputFields.c5_cliente,
       c5_zidcont: event.inputFields.id_contrato || "",
+      c5_zfonte: event.inputFields.ultima_fonte__remap_ || "",
       itens: JSON.parse(event.inputFields.lineItems).map((lineItem) => ({
         produto: lineItem.properties.hs_sku,
         qtdven: +lineItem.properties.quantity,
@@ -328,17 +331,19 @@ exports.main = async (event, callback) => {
             (1 -
               Number.parseFloat(lineItem.properties.hs_discount_percentage) /
                 100)
+          : lineItem.properties.discount
+          ? lineItem.properties.price - lineItem.properties.discount
           : Number.parseFloat(lineItem.properties.price),
       })),
     };
 
-    //console.log(body);
+    console.log(body);
     //stop;
 
     const protheusResponse = await sendDealToProtheus(body, protheusToken);
     console.log("protheusResponse", protheusResponse);
 
-    const properties = protheusResponse.data.objects[0];
+    const properties = protheusResponse.objects[0];
     return await callback({
       outputFields: {
         c5_num: properties.num,
@@ -347,7 +352,7 @@ exports.main = async (event, callback) => {
   } catch (err) {
     console.error(err);
     console.error("err", err.message);
-    return await callback({
+    await callback({
       outputFields: {
         errorMessage: err.message,
       },
