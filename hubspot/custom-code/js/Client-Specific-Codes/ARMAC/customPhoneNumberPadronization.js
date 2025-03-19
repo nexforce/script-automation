@@ -53,11 +53,11 @@ exports.main = async (event, callback) => {
     const phoneLength = normalizedPhone.length;
     if (phoneLength == 13 || phoneLength == 12) {
       console.log("Atualizando telefone para: ", normalizedPhone);
-      //await updateContactBy(objectId, normalizedPhone);
+      await updateContactBy(objectId, normalizedPhone);
     } else if (phoneLength == 11 || phoneLength == 10) {
       normalizedPhone = `55${normalizedPhone}`;
       console.log("Atualizando telefone para: ", normalizedPhone);
-      //await updateContactBy(objectId, normalizedPhone);
+      await updateContactBy(objectId, normalizedPhone);
     } else {
       throw new Error("Telefone inválido para formatação.");
     }
