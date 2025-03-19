@@ -9,7 +9,7 @@ const baseUrl = "https://api.hubapi.com/";
 const token = process.env.PHONE_PADRONIZATION_TOKEN;
 
 function normalizePhoneNumber(phoneNumber) {
-  return phoneNumber.replace(/\D/g, "");
+  return `${+phoneNumber.replace(/\D/g, "")}`;
 }
 
 async function updateContactBy(id, phoneNumber) {
@@ -45,6 +45,7 @@ exports.main = async (event, callback) => {
     const { objectId } = event.object;
 
     let normalizedPhone = normalizePhoneNumber(phone);
+    console.log(normalizedPhone);
     if (!normalizedPhone) {
       throw new Error("Telefone inválido para formatação.");
     }
@@ -52,11 +53,11 @@ exports.main = async (event, callback) => {
     const phoneLength = normalizedPhone.length;
     if (phoneLength == 13 || phoneLength == 12) {
       console.log("Atualizando telefone para: ", normalizedPhone);
-      await updateContactBy(objectId, normalizedPhone);
+      //await updateContactBy(objectId, normalizedPhone);
     } else if (phoneLength == 11 || phoneLength == 10) {
       normalizedPhone = `55${normalizedPhone}`;
       console.log("Atualizando telefone para: ", normalizedPhone);
-      await updateContactBy(objectId, normalizedPhone);
+      //await updateContactBy(objectId, normalizedPhone);
     } else {
       throw new Error("Telefone inválido para formatação.");
     }
@@ -84,7 +85,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      phone: "3499887766",
+      phone: "03499887766",
     },
     object: { objectId: 106671626575 },
   },
