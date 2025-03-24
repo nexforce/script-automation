@@ -36,6 +36,7 @@ exports.main = async (event, callback) => {
     const { contactId } = event.inputFields;
 
     const updatedContact = await updateContactBy(contactId, {
+      // adicionar propriedades que deseja modificar
       properties: {},
     });
 
