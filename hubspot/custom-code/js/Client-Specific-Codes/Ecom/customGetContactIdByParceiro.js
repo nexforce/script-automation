@@ -34,9 +34,9 @@ async function getAssociatedContactBy(parceiroId) {
 
 exports.main = async (event, callback) => {
   try {
-    const { objectId } = event.object;
+    const { parceiroId } = event.inputFields;
 
-    const associations = await getAssociatedContactBy(objectId);
+    const associations = await getAssociatedContactBy(parceiroId);
 
     if (associations.results?.length === 0) {
       throw new Error("No associated contacts.");
