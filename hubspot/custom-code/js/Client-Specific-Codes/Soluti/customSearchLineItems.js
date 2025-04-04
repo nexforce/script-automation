@@ -66,14 +66,14 @@ exports.main = async (event, callback) => {
       throw new Error("No line item found.");
     }
 
-    const refinedLineItems = lineItemsInformations.results.map((item) => {
-      const { createdate, hs_lastmodifieddate, hs_object_id, ...rest } =
-        item.properties;
+    const refinedLineItems = JSON.stringify(
+      lineItemsInformations.results.map((item) => {
+        const { createdate, hs_lastmodifieddate, hs_object_id, ...rest } =
+          item.properties;
 
-      return rest;
-    });
-
-    console.log(refinedLineItems);
+        return rest;
+      })
+    );
 
     return await callback({
       outputFields: { refinedLineItems },
