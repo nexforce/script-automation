@@ -1,9 +1,6 @@
 const dotenv = require("dotenv");
 
 // Utiliza o arquivo .env para obter o accessToken (Importante: nunca mandar o accessToken para o repositório!)
-dotenv.config();
-
-// Ao mandar pro custom code do fluxo, copiar a partir desta linha até o comentário [FINAL]
 const axios = require("axios");
 const customObjectId = "2-28064547";
 
@@ -57,6 +54,13 @@ function ucPropertiesFormatter(inputFields) {
     TO: "Tocantins",
   };
 
+  const tariffModalityMapper = {
+    VERDE: "Verde",
+    AZUL: "Azul",
+    CONVENCIONAL: "Convencional",
+    BRANCA: "Branca",
+  };
+
   const dueDateFormatted = inputFields.duedate
     .replaceAll("/", "-")
     .split("-")
@@ -78,7 +82,8 @@ function ucPropertiesFormatter(inputFields) {
       demanda_contratada_fp_kw: inputFields.demand,
       consumo_pico: inputFields.peak,
       consumo_fora_pico: inputFields.offpeak,
-      modalidade_tarifaria: inputFields.tariffmodality,
+      modalidade_tarifaria:
+        tariffModalityMapper[inputFields.tariffmodality] || "",
       subgrupo_tarifario: inputFields.subgroup,
       data_de_vencimento_da_fatura: new Date(dueDateFormatted).getTime(),
       leitura_de_fatura___quantidade_de_dias_de_leitura:
@@ -132,29 +137,19 @@ exports.main = async (event, callback) => {
     const { objectId } = event.object;
     const { inputFields } = event;
 
-    try {
-      const dataForUpdate = ucPropertiesFormatter(inputFields);
-      console.log(dataForUpdate);
+    const dataForUpdate = ucPropertiesFormatter(inputFields);
+    console.log(dataForUpdate);
 
-      await updateUCBy(objectId, dataForUpdate);
+    await updateUCBy(objectId, dataForUpdate);
 
-      console.log("UC updated successfully.");
-      return await callback({
-        outputFields: {
-          hs_execution_state: "SUCCESS",
-          hs_object_id: event.object.objectId,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      return await callback({
-        outputFields: { hs_execution_state: "FAIL_CONTINUE" },
-      });
-    }
-  } catch (err) {
-    await callback({
-      outputFields: { hs_execution_state: "FAIL_CONTINUE" },
+    console.log("UC updated successfully.");
+    return await callback({
+      outputFields: {
+        hs_execution_state: "SUCCESS",
+        hs_object_id: event.object.objectId,
+      },
     });
+  } catch (err) {
     console.error(err);
     // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
     if (axios.isAxiosError(err) && JSON.stringify(err).includes("cloudflare"))
@@ -181,7 +176,7 @@ exports.main(
       demand: 120,
       peak: 80,
       offpeak: 40,
-      tariffmodality: "Convencional",
+      tariffmodality: "CONVENCIONAL",
       subgroup: "B1",
       duedate: "24/07/2024",
       readingdays: 30,
