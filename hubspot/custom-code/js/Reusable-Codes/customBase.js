@@ -27,7 +27,10 @@ async function hubspotCallFunction(id) {
 
 exports.main = async (event, callback) => {
   try {
-  } catch (error) {
+    return await callback({
+      outputFields: {},
+    });
+  } catch (err) {
     console.error(err);
     // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
     if (axios.isAxiosError(err) && JSON.stringify(err).includes("cloudflare"))
