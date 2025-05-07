@@ -22,21 +22,28 @@ async function getPdfOnHS(id) {
 
     return response.data.url;
   } catch (error) {
-    console.log("Error getting file.");
-    throw error;
+    console.error("Error getting File", error.message);
+    const errorMessage =
+      error.response?.data?.message || "Unkown error on Hubspot.";
+
+    console.error(errorMessage);
+
+    throw new Error(errorMessage);
   }
 }
 
 exports.main = async (event, callback) => {
   try {
-    if (!event.inputFields.fatura) {
+    if (!event.inputFields.modelo_de_carta_denuncia) {
       console.log("No document to get.");
       return await callback({
         outputFields: { hs_execution_state: "FAIL_CONTINUE" },
       });
     }
 
-    const signedUrl = await getPdfOnHS(event.inputFields.fatura);
+    const signedUrl = await getPdfOnHS(
+      event.inputFields.modelo_de_carta_denuncia
+    );
 
     return await callback({
       outputFields: { signedUrl },
@@ -59,7 +66,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      fatura: 166800232995,
+      modelo_de_carta_denuncia: 166800232995,
     },
     object: { objectId: 12887363680 },
   },
