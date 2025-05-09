@@ -71,7 +71,7 @@ exports.main = async (event, callback) => {
         documentUrl: response.original_file,
         signUrl: response.signers[0].sign_url,
         token: response.token,
-        url: `https://app.zapsign.com.br/conta/documentos/${document.token}`,
+        url: `https://app.zapsign.com.br/conta/documentos/${response.token}`,
       },
     });
   } catch (err) {
