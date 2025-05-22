@@ -7,13 +7,29 @@ def main(event):
     if not token:
         raise ValueError("Token de acesso da HubSpot não encontrado")
     
-    deal_id = event.get('inputFields', {}).get('deal_id')
-    if not deal_id:
-        raise ValueError("ID do Deal não fornecido nos inputs")
+    deal_id = event.get('object', {}).get('objectId')
     
     itens_estruturados_json = event.get('inputFields', {}).get('itens_estruturados')
     if not itens_estruturados_json:
         raise ValueError("Lista de itens estruturados não fornecida")
+    
+
+    tempo_locacao = event.get('inputFields', {}).get('qual_o_tempo_de_locacao_')
+    recurring_billing_period = None
+    if tempo_locacao:
+        mapping = {
+            "Abaixo de 1 mês": "P1M",
+            "1 mês": "P1M",
+            "2 meses": "P2M",
+            "3 meses": "P3M",
+            "4 meses": "P4M",
+            "5 meses": "P5M",
+            "6 meses": "P6M",
+            "7 meses": "P7M",
+            "8 meses": "P8M",
+            "9 meses": "P9M"
+        }
+        recurring_billing_period = mapping.get(tempo_locacao, None)
     
     try:
         itens_estruturados = json.loads(itens_estruturados_json)
@@ -52,7 +68,9 @@ def main(event):
         produto_nome = produto.get('properties', {}).get('name')
         print(f"Produto encontrado: {produto_nome} (ID: {produto_id})")
         
-        success, line_item = criar_line_item_com_associacao(produto_id, quantidade, produto_nome, deal_id, headers)
+        success, line_item = criar_line_item_com_associacao(
+            produto_id, quantidade, produto_nome, deal_id, headers, recurring_billing_period
+        )
         
         if success:
             line_item_id = line_item.get('id')
@@ -109,15 +127,21 @@ def buscar_produto(nome_produto, headers):
         print(f"Erro ao buscar produto {nome_produto}: {e}")
         return None
 
-def criar_line_item_com_associacao(produto_id, quantidade, nome_produto, deal_id, headers):
+def criar_line_item_com_associacao(produto_id, quantidade, nome_produto, deal_id, headers, recurring_billing_period=None):
     url = "https://api.hubapi.com/crm/v3/objects/line_items"
     
+    properties = {
+        "quantity": str(quantidade),
+        "hs_product_id": produto_id,
+      	"franquia_de_horas": "200",
+      	"periodo_de_cobranca": "Mensal",
+        "name": f"{nome_produto}"
+    }
+    if recurring_billing_period:
+        properties["hs_recurring_billing_period"] = recurring_billing_period
+
     payload = {
-        "properties": {
-            "quantity": str(quantidade),
-            "hs_product_id": produto_id,
-            "name": f"{nome_produto} - {quantidade} unidade(s)"
-        },
+        "properties": properties,
         "associations": [
             {
                 "to": {
@@ -145,11 +169,7 @@ def criar_line_item_com_associacao(produto_id, quantidade, nome_produto, deal_id
             return True, response.json()
         
         alt_payload = {
-            "properties": {
-                "quantity": str(quantidade),
-                "hs_product_id": produto_id,
-                "name": f"{nome_produto} - {quantidade} unidade(s)"
-            }
+            "properties": properties
         }
         
         alt_response = requests.post(url, headers=headers, json=alt_payload)
