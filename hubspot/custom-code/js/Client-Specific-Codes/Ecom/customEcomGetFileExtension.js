@@ -46,10 +46,11 @@ exports.main = async (event, callback) => {
 
   try {
     if (!event.inputFields.fatura) {
-      console.log("No document to get.");
-      return await callback({
-        outputFields: { hs_execution_state: "FAIL_CONTINUE" },
-      });
+      console.error("No document to get.");
+      throw new Error("No document to get.");
+    } else if (event.inputFields.fatura.split(";").length > 1) {
+      console.error("More then one document to get.");
+      throw new Error("More then one document to get.");
     }
 
     const extension = await getPdfOnHS(event.inputFields.fatura);
@@ -60,9 +61,6 @@ exports.main = async (event, callback) => {
       outputFields: { isValidExtension },
     });
   } catch (err) {
-    await callback({
-      outputFields: { hs_execution_state: "FAIL_CONTINUE" },
-    });
     console.error(err);
     // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
     if (axios.isAxiosError(err) && JSON.stringify(err).includes("cloudflare"))
@@ -71,7 +69,6 @@ exports.main = async (event, callback) => {
     throw err;
   }
 };
-
 // [FINAL]
 
 exports.main(
@@ -79,7 +76,7 @@ exports.main(
     inputFields: {
       fatura: 166800232995,
     },
-    object: { objectId: 12887363680 },
+    object: { objectId: 27396336985 },
   },
   console.log
 );
