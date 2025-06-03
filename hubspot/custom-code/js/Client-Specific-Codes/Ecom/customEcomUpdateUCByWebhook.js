@@ -18,8 +18,13 @@ async function updateUCBy(id, data) {
 
     return uc.data;
   } catch (error) {
-    console.log("Error updating UC.");
-    throw error;
+    console.error("Error updating UC", error.message);
+    const errorMessage =
+      error.response?.data?.message || "Unkown error on Hubspot.";
+
+    console.error(errorMessage);
+
+    throw new Error(errorMessage);
   }
 }
 
@@ -75,7 +80,7 @@ function ucPropertiesFormatter(inputFields) {
       cep: inputFields.customeraddresszipcode.replaceAll("-", ""),
       cidade: inputFields.customeraddresscity,
       estado: stateMapper[inputFields.customeraddressstate],
-      distribuidora_da_unidade: inputFields.providername,
+      distribuidora: inputFields.providername,
       cnpj_da_distribuidora: inputFields.providercnpj,
       id_leitura_de_fatura: inputFields.transactionid,
       demanda_contratada_p_kw: inputFields.demand,
