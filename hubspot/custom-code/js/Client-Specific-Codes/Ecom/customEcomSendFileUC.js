@@ -19,7 +19,7 @@ async function getPdfOnHS(id) {
     };
 
     const {
-      data: { url },
+      data: { url, extension },
     } = await axios({
       url: `https://api.hubapi.com/files/v3/files/${id}/signed-url`,
       method: "GET",
@@ -33,10 +33,15 @@ async function getPdfOnHS(id) {
       responseType: "arraybuffer",
     });
 
-    return pdf.data;
+    return { data: pdf.data, extension };
   } catch (error) {
-    console.log("Error getting file.");
-    throw error;
+    console.error("Error getting file.", error.message);
+    const errorMessage =
+      error.response?.data?.message || "Unkown error on Hubspot.";
+
+    console.error(errorMessage);
+
+    throw new Error(errorMessage);
   }
 }
 
@@ -71,8 +76,10 @@ exports.main = async (event, callback) => {
       });
     }
 
-    const response = await getPdfOnHS(event.inputFields.fatura);
-    console.log(response);
+    const { data: file, extension } = await getPdfOnHS(
+      event.inputFields.fatura
+    );
+    console.log(extension);
 
     let tmpDir;
     const appPrefix = "IA-ECOM-hs";
@@ -81,14 +88,14 @@ exports.main = async (event, callback) => {
       tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), appPrefix));
       console.log(tmpDir);
 
-      await fs.writeFile(`${tmpDir}/${objectId}.pdf`, response);
+      await fs.writeFile(`${tmpDir}/${objectId}.${extension}`, file);
 
       const data = {
-        file_field: createReadStream(`${tmpDir}/${objectId}.pdf`),
-        file_name: `${objectId}.pdf`,
+        file_field: createReadStream(`${tmpDir}/${objectId}.${extension}`),
+        file_name: `${objectId}.${extension}`,
         start_workflow: "true",
         webhook_url:
-          "https://webhook.site/706b6323-9130-41e2-b309-115dcf39143d",
+          "https://webhook.site/a9d4996c-0a7f-40ca-ae5b-f41e77c65098",
       };
 
       const documentInformation = await getDocumentInformations(data);
@@ -98,6 +105,7 @@ exports.main = async (event, callback) => {
       return await callback({
         outputFields: {
           transactionId: documentInformation.transaction_id,
+          functionId: documentInformation.step_function_execution_arn,
         },
       });
     } catch (error) {

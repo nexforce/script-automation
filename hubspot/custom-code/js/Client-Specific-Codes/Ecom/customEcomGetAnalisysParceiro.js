@@ -43,7 +43,7 @@ async function updateParceiroBy(id, data) {
   try {
     const hsToken = process.env.PARCEIRO_TOKEN;
 
-    const url = `https://api.hubapi.com/crm/v3/objects/2-28103807/${id}`;
+    const url = `https://api.hubapi.com/crm/v3/objects/2-28091991/${id}`;
 
     const headers = {
       Authorization: `Bearer ${hsToken}`,
@@ -60,6 +60,16 @@ async function updateParceiroBy(id, data) {
 
 function formatDate(date) {
   return new Date(date).setUTCHours(0, 0, 0, 0);
+}
+
+function formatPhoneNumber(phone) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith("55")) {
+    return "+" + digits;
+  }
+
+  return "+55" + digits;
 }
 
 function parceiroPropertiesFormatter(analysisId, data, documentType) {
@@ -101,7 +111,7 @@ function parceiroPropertiesFormatter(analysisId, data, documentType) {
       inscricao_estadual: data.empresa.inscricao_estadual,
       numero_de_filiais: data.empresa.numero_de_filiais,
       numero_de_funcionarios: data.empresa.numero_de_funcionarios,
-      telefone_da_empresa: data.empresa.telefone_da_empresa,
+      telefone_da_empresa: formatPhoneNumber(data.empresa.telefone_da_empresa),
       email_da_empresa: data.empresa.email_da_empresa,
     },
   };
@@ -132,7 +142,6 @@ exports.main = async (event, callback) => {
           hs_execution_state: "SUCCESS",
           hs_object_id: event.object.objectId,
           analysisId: identificador__id_,
-          ...infosToUpdate.properties,
         },
       });
     }
