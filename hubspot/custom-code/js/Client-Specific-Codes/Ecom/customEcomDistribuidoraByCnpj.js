@@ -465,24 +465,15 @@ exports.main = async (event, callback) => {
     });
   } catch (err) {
     console.error(err);
-    // Force retry if error is on cloudflare's side. (https://developers.hubspot.com/docs/api/error-handling#custom-code-workflow-actions)
-    if (
-      typeof axios !== "undefined" &&
-      axios.isAxiosError(err) &&
-      JSON.stringify(err).includes("cloudflare")
-    )
-      err.response.status = 500;
-    // We will automatically retry when the code fails because of a rate limiting error from the HubSpot API.
     throw err;
   }
 };
-
 // [FINAL];
 
 exports.main(
   {
     inputFields: {
-      cnpj_da_distribuidora: "45955360000185",
+      cnpj_da_distribuidora: "52777034000190",
     },
     object: { objectId: "" },
   },
