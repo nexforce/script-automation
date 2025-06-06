@@ -451,7 +451,8 @@ exports.main = async (event, callback) => {
       throw new Error("CNPJ not provided.");
     }
 
-    const distributor = distributorsData[cnpj_da_distribuidora];
+    const distributor =
+      distributorsData[cnpj_da_distribuidora.replace(/\D/g, "")];
 
     if (!distributor) {
       throw new Error("Distributor not found for the provided CNPJ.");
@@ -473,7 +474,7 @@ exports.main = async (event, callback) => {
 exports.main(
   {
     inputFields: {
-      cnpj_da_distribuidora: "52777034000190",
+      cnpj_da_distribuidora: "5/277.7034.0001-90",
     },
     object: { objectId: "" },
   },
