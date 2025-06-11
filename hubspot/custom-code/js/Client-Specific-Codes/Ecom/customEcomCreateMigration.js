@@ -104,7 +104,7 @@ exports.main = async (event, callback) => {
   try {
     return await callback({
       outputFields: {
-        //migrationId: migration.id,
+        migrationId: migration.id,
       },
     });
   } catch (err) {
