@@ -19,9 +19,9 @@ async function getMigrationCard(id, token) {
 
     return response.data;
   } catch (error) {
-    console.error("", error.message);
+    console.error("Error getting migration card.", error.message);
     const errorMessage =
-      error.response?.data?.message || "Unkown error on Hubspot.";
+      error.response?.data?.message || "Unkown error on thunders.";
 
     console.error(errorMessage);
 
