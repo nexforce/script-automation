@@ -130,11 +130,11 @@ function ticketsPayloadFormatter(deal, lineItems) {
 }
 
 exports.main = async (event, callback) => {
-  const { lineItemsIds, ...rest } = event.inputFields;
+  const { lineItemIds, ...rest } = event.inputFields;
   const { objectId } = event.object;
 
   const lineItemsInfos = await getLineItemsInformations(
-    JSON.parse(lineItemsIds)
+    JSON.parse(lineItemIds)
   );
 
   if (
@@ -189,7 +189,7 @@ exports.main(
       regional: "Sudeste",
       endereco___rua__numero_: "Rua Teste, 123",
       hubspot_owner_id: "696073723",
-      lineItemsIds: "[34505270453,34505270454,34505270455]",
+      lineItemIds: "[34505270453,34505270454,34505270455]",
     },
     object: { objectId: "38814052681" },
   },
