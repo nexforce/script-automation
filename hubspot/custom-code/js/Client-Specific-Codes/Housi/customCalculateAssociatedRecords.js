@@ -56,7 +56,6 @@ exports.main = async (event, callback) => {
 
     let associationCount = associatedUnidades.results.length;
 
-    console.log("Associated Unidades:", associatedUnidades);
     console.log(`Total Unidades associadas: ${associationCount}`);
 
     return await callback({
