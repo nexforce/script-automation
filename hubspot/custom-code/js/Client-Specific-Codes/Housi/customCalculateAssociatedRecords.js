@@ -16,7 +16,7 @@ async function getAssociatedUnidades(id, after = null, limit = 500) {
       Authorization: `Bearer ${token}`,
     };
 
-    const url = `https://api.hubapi.com/crm/v4/objects/${empreendimentoObjectTypeId}/${id}/associations/${unidadeObjectTypeId}?limit=500${
+    const url = `https://api.hubapi.com/crm/v4/objects/${empreendimentoObjectTypeId}/${id}/associations/${unidadeObjectTypeId}?limit=${limit}${
       after ? `&after=${after}` : ""
     }`;
 
