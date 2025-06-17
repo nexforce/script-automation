@@ -25,7 +25,7 @@ async function createBatchOfUnidades(inputs) {
 
     return response.data;
   } catch (error) {
-    console.error("", error.message);
+    console.error("Error creating batch of Unidades.", error.message);
     const errorMessage =
       error.response?.data?.message || "Unkown error on Hubspot.";
 
