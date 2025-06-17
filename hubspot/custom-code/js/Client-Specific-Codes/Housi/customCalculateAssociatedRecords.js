@@ -56,12 +56,13 @@ exports.main = async (event, callback) => {
 
     let associationCount = associatedUnidades.results.length;
 
+    console.log(`Total Unidades no prédio: ${numero_de_unidades_no_predio}`);
     console.log(`Total Unidades associadas: ${associationCount}`);
 
     return await callback({
       outputFields: {
         associationCount,
-        needsToCreateUnidades: associationCount <= numero_de_unidades_no_predio,
+        needsToCreateUnidades: associationCount < numero_de_unidades_no_predio,
       },
     });
   } catch (err) {
