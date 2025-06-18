@@ -1,19 +1,14 @@
 const axios = require('axios');
 
 exports.main = async (event, callback) => {
-  const {hubspot_owner_id, dealname} = event.inputFields; //-> VAI RECEBER DO WORKFLOW, NOME DO CAMPO COM NOME INTERNO ERRADO? INTERNAL_NAME = hubspot_owner_id 
- //TODO: buscar na api de search deals que possuem o husbpot_owner_id = hubspot_owner_id e franquiactn = conhecida
-  const {objectId} = event.object //deal a ser atualizado, que entrou no workflow
-  // procurar na api de search como fazer as pesquisas
+  const {hubspot_owner_id, dealname} = event.inputFields;
+  const {objectId} = event.object;
   console.log('hubspot_owner_id', hubspot_owner_id);
   console.log('dealId',  dealname);
 
-  const hubspotApiKey = process.env.NX_OPERATIONS; // precisa ser criada -> só tem a NX_DEV
+  const hubspotApiKey = process.env.NX_OPERATIONS;
   if (!hubspotApiKey) {
-    callback({
-      errorMessage: 'Chave de API não configurada. Verifique as variáveis de ambiente.',
-    });
-    return;
+    throw new Error('Chave de API não configurada. Verifique as variáveis de ambiente.');
   }
 
   const config = {
@@ -23,8 +18,7 @@ exports.main = async (event, callback) => {
   };
 
   try {
-
-    // 2. Buscar negócios relacionados ao id do proprietário -- modificar para pegar franquia ctn conhecida
+    
     const dealsSearchUrl = `https://api.hubapi.com/crm/v3/objects/deals/search`;
     const searchBody = {
       filterGroups: [
@@ -42,7 +36,7 @@ exports.main = async (event, callback) => {
             {
                 propertyName: 'pipeline',
                 operator: 'EQ',
-                value: '89742134' // internal name do dropdown select, properties -> deal -> pipeline -> internalname
+                value: '89742134'
             }
           ],
         },
@@ -55,12 +49,7 @@ exports.main = async (event, callback) => {
 
     console.log('Negócios encontrados:', deals);
     if (!deals || deals.length === 0) {
-      callback({
-        outputFields: {
-          message: 'Nenhum negócio encontrado para este proprietário.',
-        },
-      });
-      return;
+      throw new Error('Nenhum negócio encontrado para este proprietário.');
     }
 
     const franquiaCTNs = deals
@@ -70,7 +59,6 @@ exports.main = async (event, callback) => {
     const franquiaCTNClinica = franquiaCTNs.join(', ');
 
     console.log('Franquia CTN Clínica encontrada:', franquiaCTNClinica);
-    // 3. Atualizar o negócio inscrito
     const dealUpdateUrl = `https://api.hubapi.com/crm/v3/objects/deals/${objectId}`;
     const updateBody = {
       properties: {
@@ -82,7 +70,6 @@ exports.main = async (event, callback) => {
     await axios.patch(dealUpdateUrl, updateBody, config);
     console.log('Negócio atualizado com sucesso.');
 
-    // 4. Retornar os dados
     callback({
       outputFields: {
         franquiaCTNClinica: franquiaCTNClinica || 'Nenhuma Franquia CTN encontrada',
@@ -91,9 +78,7 @@ exports.main = async (event, callback) => {
     });
   } catch (error) {
     console.error('Erro durante a execução:', error.response?.data || error.message);
-    callback({
-      errorMessage: `Erro ao processar a solicitação: ${error.response?.data?.message || error.message}`,
-    });
+    throw Error(`Erro ao processar a solicitação: ${error.response?.data?.message || error.message}`);
   }
 };
 
