@@ -34,28 +34,27 @@ async function updateUCBy(id, data) {
 exports.main = async (event, callback) => {
   try {
     const { objectId } = event.object;
-    const { distributorName, concessionaireCode } = event.inputFields;
+    const { distributorName, concessionaireCode, codCce, thundersId } =
+      event.inputFields;
 
-    if (!concessionaireCode) {
-      console.log(
-        `Updating UC with distributor: ${distributorName} and no concessionaire code.`
-      );
-    } else {
-      console.log(
-        `Updating UC with distributor: ${distributorName} and concessionaire code: ${concessionaireCode}`
-      );
-    }
+    console.log("Distributor name: ", distributorName);
+    console.log("Concessionaire code: ", concessionaireCode);
+    console.log("Cod CCE: ", codCce);
+    console.log("Thunders ID: ", thundersId);
 
     const dataForUpdate = {
       properties: {
         distribuidora_da_unidade: distributorName,
         codigo_da_concessionaria: concessionaireCode,
+        codigoagenteconcessionariaunidadeconsumidora: codCce,
+        thunders_id_da_distribuidora: thundersId,
       },
     };
 
+    console.log("Updating UC...");
     await updateUCBy(objectId, dataForUpdate);
-
     console.log("UC updated successfully.");
+
     return await callback({
       outputFields: {
         hs_execution_state: "SUCCESS",
