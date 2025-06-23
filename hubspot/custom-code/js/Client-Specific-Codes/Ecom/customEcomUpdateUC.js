@@ -45,8 +45,7 @@ exports.main = async (event, callback) => {
     const dataForUpdate = {
       properties: {
         distribuidora_da_unidade: distributorName,
-        codigo_da_concessionaria: concessionaireCode,
-        codigoagenteconcessionariaunidadeconsumidora: codCce,
+        codigo_da_concessionaria: codCce,
         thunders_id_da_distribuidora: thundersId,
       },
     };
