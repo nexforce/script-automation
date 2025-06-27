@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import time
+import re
 from datetime import datetime, timedelta, timezone
 
 
@@ -57,6 +58,11 @@ DE_PARA_CUSTOM_FORMS = {
     'LI E CONCORDO COM O AVISO DE PRIVACIDADE': 'aceite_termo_de_uso___sympla',
  	'“LI E CONCORDO COM O AVISO DE PRIVACIDADE”': 'aceite_termo_de_uso___sympla'
 }
+
+EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.(?:com|br|net|org|gov|edu|io|tech|info|co|biz)$")
+
+def is_valid_email(email):
+    return bool(EMAIL_REGEX.match(email.strip().lower()))
 
 def get_paginated_data(url, headers, params=None, time_limit=15):
     all_data = []
@@ -211,16 +217,19 @@ def map_sympla_to_hubspot(participant, event, orders_data):
 def process_batch(batch, hubspot_headers, batch_upsert_url):
     seen_emails = set()
     unique_batch = []
-    
+
     for contact in batch:
-        email = contact['properties'].get('email')
+        email = contact['properties'].get('email', '').strip()
         if email and email not in seen_emails:
             seen_emails.add(email)
-            unique_batch.append(contact)
-    
+            if is_valid_email(email):
+                unique_batch.append(contact)
+            else:
+                print(f"Email inválido removido do lote: {email}")
+
     if not unique_batch:
         return True 
-    
+
     payload = {
         "inputs": [{
             "id": contact['properties'].get('email'),
@@ -231,15 +240,14 @@ def process_batch(batch, hubspot_headers, batch_upsert_url):
 
     if not payload["inputs"]:
         return True 
-    
+
     try:
         response = requests.post(
             batch_upsert_url,
             json=payload,
             headers=hubspot_headers
         )
-        #print(payload)
-        
+
         if response.status_code == 200:
             results = response.json().get('results', [])
             success_count = sum(1 for r in results if r.get('status') != 'ERROR')
@@ -248,7 +256,6 @@ def process_batch(batch, hubspot_headers, batch_upsert_url):
         else:
             print(f'Erro no batch: {response.status_code}')
             return False
-            
     except Exception as e:
         print(f'Falha no batch: {str(e)}')
         return False
@@ -257,7 +264,6 @@ def main(event):
     try:
         SYMPLA_TOKEN = os.environ.get('SYMPLA_TOKEN')
         HUBSPOT_TOKEN = os.environ.get('HUBSPOT_TOKEN_SYMPLA')
-        
         HEADERS_SYMPLA = {'s_token': SYMPLA_TOKEN}
         HEADERS_HUBSPOT = {
             'Authorization': f'Bearer {HUBSPOT_TOKEN}',
