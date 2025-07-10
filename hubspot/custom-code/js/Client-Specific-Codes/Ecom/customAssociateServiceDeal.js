@@ -31,9 +31,9 @@ async function getAssociatedDealBy(ucId) {
 }
 
 exports.main = async (event, callback) => {
-  const { ucId } = event.inputFields;
+  const { objectId } = event.object;
   try {
-    const deal = await getAssociatedDealBy(ucId);
+    const deal = await getAssociatedDealBy(objectId);
 
     if (deal?.results.length === 0) {
       console.error("No associated deal found.");
@@ -65,8 +65,8 @@ exports.main = async (event, callback) => {
 
 exports.main(
   {
-    inputFields: { ucId: "29389277834" },
-    object: { objectId: "" },
+    inputFields: {},
+    object: { objectId: "29389277834" },
   },
   console.log
 );
