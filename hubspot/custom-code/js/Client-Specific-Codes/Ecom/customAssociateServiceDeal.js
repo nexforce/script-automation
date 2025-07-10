@@ -7,20 +7,26 @@ dotenv.config();
 const axios = require("axios");
 
 const token = process.env.SERVICE_API_TOKEN;
-const ucObjectId = "2-28064547";
 
-async function getAssociatedDealBy(ucId) {
+async function associateServiceDealBy(serviceId, dealId) {
   try {
-    const url = `https://api.hubapi.com/crm/v4/objects/${ucObjectId}/${ucId}/associations/deals`;
+    const url = `https://api.hubapi.com/crm/v4/objects/services/${serviceId}/associations/deals/${dealId}`;
     const headers = {
       Authorization: `Bearer ${token}`,
     };
 
-    const response = await axios({ method: "GET", url, headers });
+    const data = [
+      {
+        associationCategory: "HUBSPOT_DEFINED",
+        associationTypeId: 794,
+      },
+    ];
+
+    const response = await axios({ method: "PUT", url, data, headers });
 
     return response.data;
   } catch (error) {
-    console.error("Error getting associated deal.", error.message);
+    console.error("Error associating service and deal.", error.message);
     const errorMessage =
       error.response?.data?.message || "Unkown error on Hubspot.";
 
@@ -32,24 +38,14 @@ async function getAssociatedDealBy(ucId) {
 
 exports.main = async (event, callback) => {
   const { objectId } = event.object;
+  const { dealId } = event.inputFields;
+
   try {
-    const deal = await getAssociatedDealBy(objectId);
-
-    if (deal?.results.length === 0) {
-      console.error("No associated deal found.");
-      throw new Error("No associated deal found.");
-    } else if (deal?.results.length > 1) {
-      console.log("Multiple associated deals found. Using the first one.");
-    }
-
-    console.log("Associated deal found:", deal);
-
-    const dealId = deal.results[0].toObjectId;
-
+    console.log("Associating service with deal...");
+    const response = await associateServiceDealBy(objectId, dealId);
+    console.log("Association successful:", response);
     return await callback({
-      outputFields: {
-        dealId,
-      },
+      outputFields: {},
     });
   } catch (err) {
     console.error(err);
@@ -65,7 +61,7 @@ exports.main = async (event, callback) => {
 
 exports.main(
   {
-    inputFields: {},
+    inputFields: { dealId: "35672423223" },
     object: { objectId: "29389277834" },
   },
   console.log
